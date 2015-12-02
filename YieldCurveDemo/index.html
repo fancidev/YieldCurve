@@ -82,6 +82,12 @@
         },
         data: [ ]
       });
+      
+      // Handle key events on the time series chart.
+      $("#timeSeriesChart")
+        .attr('tabindex', '0')
+        .keydown(handleTimeSeriesKeyDown)
+	.mousedown(handleTimeSeriesMouseDown);
     });
     
     function toggleVisibility(dataSeries)
@@ -140,24 +146,12 @@
     
     function onClickTimeSeries(e)
     {
-      // Draw a vertical line across the chart to highlight the selected date.
+      // Select the clicked date.
       var dt = e.dataPoint.x;
-      var stripLine = e.chart.options.axisX.stripLines[0];
-      if (stripLine.value === dt) {
-        delete stripLine.value;
-      } else {
-        stripLine.value = dt;
-      }
-      e.chart.render();
-      
-      // Plot the term structure of the selected date on a separate chart.
-      var table = e.chart.dataTable; // our attached property
-      var filtered = [table[0]];
-      for (var i = 1; i < table.length; i++) {
-        if (table[i][0] === dt)
-          filtered.push(table[i]);
-      }
-      drawTermStructure(filtered);
+      var table = e.chart.dataTable;
+      var dates = getTableColumn(table, 0);
+      var index = dates.indexOf(dt);
+      setSelectedIndices([index]);
     }
 
     function subsample(table, frequency)
@@ -197,7 +191,125 @@
       }
       return result;
     }
+
+    function getTableColumn(table, columnIndex)
+    {
+      var result = [];
+      for (var i = 0; i < table.length; i++) {
+        result.push(table[i][columnIndex]);
+      }
+      return result;
+    }
     
+    // Returns an array of the one-based indices of selected dates in the time series chart.
+    function getSelectedIndices()
+    {
+      var chart = $('#timeSeriesChart').CanvasJSChart();
+      var stripLines = chart.options.axisX.stripLines;
+      var indices = [];
+      for (var i = 0; i < stripLines.length; i++) {
+        indices.push(stripLines[i].index);
+      }
+      indices.sort();
+      return indices;
+    }
+    
+    function setSelectedIndices(indices)
+    {
+      indices.sort();
+      
+      // Draw a vertical line across the chart to highlight the selected dates.
+      var chart = $('#timeSeriesChart').CanvasJSChart();
+      var table = chart.dataTable;
+      var dates = getTableColumn(table, 0);
+      var stripLines = chart.options.axisX.stripLines;
+      stripLines.length = 0;
+      for (var i = 0; i < indices.length; i++) {
+        var dt = dates[indices[i]];
+        stripLines.push({
+	  index: indices[i],
+	  value: dt,
+	  label: CanvasJS.formatDate(dt, 'DD-MMM-YYYY'),
+          labelBackgroundColor: '#444444'
+          //labelFormatter: function (e) { return CanvasJS.formatDate(e.stripLine.value, 'DD-MMM-YYYY'); }
+        });
+      }
+      chart.render();
+      
+      // Plot the term structure of the selected dates on a separate chart.
+      var filtered = [table[0]];
+      indices.sort();
+      for (var i = 0; i < indices.length; i++) {
+          filtered.push(table[indices[i]]);
+      }
+      drawTermStructure(filtered);
+    }
+    
+    function handleTimeSeriesKeyDown(e) 
+    {
+      var chart = $('#timeSeriesChart').CanvasJSChart();
+      var table = chart.dataTable; // our attached property
+      if (table.length <= 1) // no observations
+        return;
+	
+      // Left, Right, Home, End: select a single item 
+      // Ctrl+L/R/H/E: moves selection in parallel
+      // Shift+L/R/H/E: select a range of items
+      // For a list of keycodes, see https://api.jquery.com/keydown/
+      var selection;
+      switch (e.which) {
+        case 37: // left arrow
+	  selection = getSelectedIndices();
+	  if (selection.length == 0) {
+	    selection = [table.length-1];
+	  } else if (selection[0] > 1) {
+	    if (e.shiftKey) { // TBD: doesn't work well
+	      selection.push(selection[0]-1);
+	    } else if (e.ctrlKey) {
+	      for (var i = 0; i < selection.length; i++)
+	        --selection[i];
+            } else {
+	      selection = [selection[0]-1];
+	    }
+	  }
+	  setSelectedIndices(selection);
+	  break;
+	case 39: // right arrow
+	  selection = getSelectedIndices();
+	  if (selection.length == 0) {
+	    selection = [1];
+	  } else if (selection[selection.length-1] < table.length-1) {
+	    if (e.shiftKey) { // TBD: doesn't work well
+	      selection.push(selection[selection.length-1]+1);
+	    } else if (e.ctrlKey) {
+	      for (var i = 0; i < selection.length; i++)
+	        ++selection[i];
+            } else {
+	      selection = [selection[selection.length-1]+1];
+	    }
+	  }
+	  setSelectedIndices(selection);
+	  break;
+	  break;
+	case 36: // home
+	  if (table.length > 1) {
+	    setSelectedIndices([1]);
+	  }
+	  break;
+	case 35: // end
+	  if (table.length > 1) {
+	    setSelectedIndices([table.length-1]);
+	  }
+	  break;
+      }
+    }
+    
+    function handleTimeSeriesMouseDown(e)
+    {
+      // Focus the chart area to capture keyboard events.
+      $('#timeSeriesChart').focus();
+    }
+	
     function drawDefaultTermStructure()
     {
       var table = getTimeSeries();
@@ -307,6 +419,7 @@
 
 <body>
   <div>
+    <div><button>Click Here</button></div>
     <div id="timeSeriesChart" style="width:100%; height:200px;">[Time Series]</div>
     <div id="currentDate"></div>
     <div id="timeSeriesSummary"></div>    
