@@ -1,0 +1,170 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <title>Hello</title>
+  <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+  <script type="text/javascript">
+
+    window.onerror = function () { return true; };
+
+    //$(document).ready(function () {
+    //  drawDefaultTimeSeries();
+    //});
+
+    google.load('visualization', '1.0', {'packages':['corechart']});
+    google.setOnLoadCallback(function () {
+      drawDefaultTimeSeries();
+    });
+
+    function drawDefaultTimeSeries() 
+    {
+      var table = getTimeSeries();
+      table[0][0] = { label: 'Date', type: 'date' };
+      drawTimeSeries(table);
+    }
+
+    function drawTimeSeries(table)
+    {
+      $('#timeSeriesSummary').text('Number of days: ' + (table.length - 1));
+    
+      var data = google.visualization.arrayToDataTable(table);
+      var options = {
+        // pointSize: 5,
+        legend: { position: 'top' },
+        chartArea: { width: '70%', height: '80%' },
+        focusTarget: 'category',
+        crosshair: {
+          orientation: 'vertical',
+          trigger: 'both',
+          color: 'gray'
+        },
+        tooltip: {
+          // trigger: 'none'
+        }
+      };
+
+      var chart = new google.visualization.LineChart(document.getElementById('timeSeriesChart'));
+      var counter = 0;
+
+      // Event handler when user clicks on the time series.
+      function selectHandler() {
+        //var selectedItem = chart.getSelection()[0];
+        //if (selectedItem) {
+        //  counter = counter + 1;
+        //  //$('#counter').text("selectHandler #" + counter + ": " + value);
+        //  $('#counter').text("selectHandler #" + counter + ": " + selectedItem.row + ", " + selectedItem.column);
+        //  var date = data.getValue(selectedItem.row, 0);
+        //  alert('The user selected ' + date);
+        //}
+      }
+
+      //google.visualization.events.addListener(chart, 'select', selectHandler);
+      //google.visualization.events.addListener(chart, 'onmouseover', function (e) {
+      //  var row = e['row'];
+      //  $('#currentDate').text('' + data.getValue(row, 0));
+      //});
+
+      // Render the chart.
+      chart.draw(data, options);
+    }
+
+    function drawDefaultTermStructure()
+    {
+      //var rows = '[["1Y",2.50],["2Y",2.65],["3Y",2.77],["4Y",2.82],["5Y",2.95]]';
+      var rows = '[[1,2.50],[2,2.65],[3,2.77],[4,2.82],[5,2.95]]';
+      drawTermStructureFromJson(rows);
+    }
+
+    function drawTermStructureFromJson(rowsJSON)
+    {
+      var rows = $.parseJSON(rowsJSON);
+      drawTermStructure(rows);
+    }
+
+    function drawTermStructure(rows) {
+
+      // Create the data table.
+      var data = new google.visualization.DataTable();
+      data.addColumn('number', 'Maturity');
+      data.addColumn('number', 'Yield');
+      data.addRows(rows);
+
+      var options = {
+        pointSize: 5,
+        legend: { position: 'none' },
+        hAxis: { //  title: 'Term',
+          baseline: 0
+        },
+        vAxis: {
+          //  title: 'Yield'
+        },
+        chartArea: { width: '80%', height: '80%' }
+      };
+
+      // Instantiate and draw our chart, passing in some options.
+      var chart = new google.visualization.LineChart(document.getElementById('termStructureChart'));
+      chart.draw(data, options);
+    }
+
+    function myTest()
+    {
+      //alert(sendRequest('echo', navigator.userAgent));
+      sendRequest('getData');
+    }
+
+    function getTimeSeries()
+    {
+      var table = sendRequest('getData');
+      for (var i = 1; i < table.length; i++) {
+        var str = table[i][0];
+        var year = parseInt(str.substring(0, 4));
+        var month = parseInt('1' + str.substring(5, 7)) - 100;
+        var day = parseInt('1' + str.substring(8, 10)) - 100;
+        table[i][0] = new Date(year, month - 1, day);
+      }
+      return table;
+    }
+    
+    function sendRequest(action, params)
+    {
+      var jsonParams = JSON.stringify(params);
+      var jsonResult;
+      if (typeof window.external.HandleRequest === 'undefined') {
+        jsonResult = mockHandleRequest(action, jsonParams);
+      } else {
+        jsonResult = window.external.HandleRequest(action, jsonParams);
+      }
+      var result = JSON.parse(jsonResult);
+      return result;
+    }
+
+    function mockHandleRequest(action, jsonParams)
+    {
+      if (action === 'getData') {
+        return '[["Date","1Y","2Y","3Y","4Y","5Y","7Y","10Y","30Y"],["2000-07-03",7.1,7.16,7.17,7.17,7.17,7.2,7.24,7.24],["2000-07-05",7.03,7.06,7.07,7.07,7.08,7.11,7.14,7.16],["2000-07-06",7.07,7.13,7.14,7.15,7.16,7.19,7.21,7.21],["2000-07-07",7.01,7.04,7.06,7.06,7.07,7.1,7.14,7.14],["2000-07-10",7.04,7.09,7.11,7.13,7.14,7.17,7.2,7.19],["2000-07-11",7.04,7.1,7.11,7.13,7.14,7.18,7.22,7.2],["2000-07-12",7.06,7.12,7.14,7.15,7.17,7.2,7.23,7.19],["2000-07-13",7.04,7.09,7.1,7.12,7.13,7.16,7.19,7.13],["2000-07-14",7.08,7.14,7.16,7.17,7.19,7.21,7.23,7.17],["2000-07-17",7.12,7.21,7.23,7.25,7.28,7.31,7.35,7.28],["2000-07-18",7.12,7.21,7.23,7.25,7.28,7.31,7.35,7.29],["2000-07-19",7.13,7.22,7.25,7.27,7.29,7.32,7.36,7.3],["2000-07-20",7.07,7.14,7.16,7.18,7.21,7.24,7.29,7.23],["2000-07-21",7.03,7.09,7.11,7.12,7.14,7.18,7.21,7.16],["2000-07-24",7.04,7.12,7.14,7.16,7.17,7.2,7.24,7.19],["2000-07-25",7.03,7.1,7.11,7.13,7.15,7.18,7.23,7.17],["2000-07-26",7.02,7.08,7.1,7.11,7.13,7.17,7.21,7.17]]';
+      } else {
+        return;
+      }
+    }
+    
+  </script>
+</head>
+
+<body>
+  <input type="button" value="InvokeMe" onclick="myTest()" />
+  <div>
+    <div id="currentDate"></div>
+    <div id="timeSeriesSummary"></div>
+    <div id="timeSeriesChart" style="width:1000px; height:200px">Time Series</div>
+    <div style="text-align: center">US Treasury Yield</div>
+    <div id="termStructureChart" style="width:1000px; height:300px; border-width:1px; border-style:solid; border-color:black">
+    <!--<div id="chart_div" style="width: 500px; height: 300px">-->
+      Loading Google Chart plug-in... (if this message persists, check that you have google access)
+    </div>
+    <p id="counter"></p>
+    <p id="timeSeriesDetails"></p>
+  </div>
+</body>
+</html>

@@ -1,17 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+﻿using System.Windows;
 
 namespace YieldCurveDemo
 {
@@ -23,6 +10,20 @@ namespace YieldCurveDemo
         public MainWindow()
         {
             InitializeComponent();
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+            using (var stream = assembly.GetManifestResourceStream("YieldCurveDemo.index.html"))
+            {
+                var source = new System.IO.StreamReader(stream).ReadToEnd();
+                wbMain.ObjectForScripting = new Server();
+                wbMain.NavigateToString(source);
+            }
+            //string codeBase= System.Reflection.Assembly.GetExecutingAssembly().CodeBase;
+            //Uri startPage = new Uri(new Uri(codeBase), "index.html");
+            //wbMain.Navigate(startPage);
         }
     }
 }
