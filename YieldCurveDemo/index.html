@@ -11,13 +11,37 @@
       $("#timeSeriesChart").CanvasJSChart(
       {
         title: { text: 'US Swap Rates Historical Time Series' },
-	toolTip: { shared: true },
-	legend: { horizontalAlign: 'left', verticalAlign: 'center', fontSize: 15 },
-        axisX: { valueFormatString:  'DD-MMM-YYYY' },
-	zoomEnabled: true,
+        toolTip: { shared: true, animationEnabled: false },
+        legend: { 
+          horizontalAlign: 'left', 
+          verticalAlign: 'center', 
+          fontSize: 12,
+          cursor: 'pointer',
+          itemclick: function (e) { toggleVisibility(e.dataSeries); e.chart.render(); }
+        },
+        axisX: {
+          valueFormatString: 'DD-MMM-YYYY', 
+          gridThickness: 1,
+          gridColor: 'gray',
+          gridDashType: 'dash',
+          stripLines: [{
+            labelBackgroundColor: '#444444',
+            labelFormatter: function (e) { return CanvasJS.formatDate(e.stripLine.value, 'DD-MMM-YYYY'); }
+          }]
+        },
+        zoomEnabled: true,
         data: [ ]
       });
     });
+    
+    function toggleVisibility(dataSeries)
+    {
+      if (typeof(dataSeries.visible) === "undefined" || dataSeries.visible) {
+        dataSeries.visible = false;
+      } else {
+        dataSeries.visible = true;
+      }
+    }
   </script>
   <script type="text/javascript">
 
@@ -43,23 +67,39 @@
       var numSeries = table[0].length - 1;
       for (var j = 1; j <= numSeries; j++) {
         var series = { 
-	  type: 'line',
-	  name: table[0][j],
-	  markerType: 'square',
-	  //xValueType: 'dateTime',
+          type: 'line',
+          name: table[0][j],
+          markerType: 'square',
+          //xValueType: 'dateTime',
           showInLegend: true,
-	  //axisY: { minimum: 6 },
-	  dataPoints: []
-	};
-	for (var i = 1; i <= numDates; i++) {
-	  series.dataPoints.push( { x: table[i][0], y: table[i][j] } );
-	}
-	chart.options.data.push(series);
+          //axisY: { minimum: 6 },
+          dataPoints: [],
+          click: onClickTimeSeries
+        };
+        for (var i = 1; i <= numDates; i++) {
+          series.dataPoints.push( { x: table[i][0], y: table[i][j] } );
+        }
+        chart.options.data.push(series);
       }
       // Reverse the series so that the legend order agree with line order.
       chart.options.data.reverse();
       
       chart.render();
+    }
+    
+    function onClickTimeSeries(e)
+    {
+      // Draw a vertical line across the chart to highlight the selected date.
+      var dt = e.dataPoint.x;
+      var stripLine = e.chart.options.axisX.stripLines[0];
+      if (stripLine.value === dt) {
+        delete stripLine.value;
+      } else {
+        stripLine.value = dt;
+      }
+      e.chart.render();
+      
+      // Plot the term structure of the selected date on a separate chart.
     }
 
     function subsample(table, frequency)
@@ -72,19 +112,30 @@
       {
         var shouldKeep;
         if (i == numDates) { // always keep the last observation
-	  shouldKeep = true;
-	} else {
-	  var thisDate = table[i][0];
-	  var nextDate = table[i+1][0];
-	  if (frequency === 'm') { // monthly
-	    shouldKeep = (thisDate.getFullYear() != nextDate.getFullYear() ||
-	                  thisDate.getMonth() != nextDate.getMonth());
-	  } else { // keep by default
-	    shouldKeep = true;
-	  }
+          shouldKeep = true;
+        } else {
+          var thisDate = table[i][0];
+          var nextDate = table[i+1][0];
+          if (frequency === 'w') { // weekly
+            shouldKeep = (nextDate.getDay() <= thisDate.getDay() ||
+	                  nextDate.getTime() - thisDate.getTime() >= 7*24*3600*1000);
+          } else if (frequency === 'm') { // monthly
+            shouldKeep = (thisDate.getFullYear() != nextDate.getFullYear() ||
+                          thisDate.getMonth() != nextDate.getMonth());
+          } else if (frequency === 'q') { // quarterly
+            shouldKeep = (thisDate.getFullYear() != nextDate.getFullYear() ||
+                          Math.floor(thisDate.getMonth()/3) != Math.floor(nextDate.getMonth()/3));
+          } else if (frequency === 's') { // semi-annually
+            shouldKeep = (thisDate.getFullYear() != nextDate.getFullYear() ||
+                          Math.floor(thisDate.getMonth()/6) != Math.floor(nextDate.getMonth()/6));
+          } else if (frequency === 'y') { // annually
+            shouldKeep = (thisDate.getFullYear() != nextDate.getFullYear());
+          } else { // keep by default
+            shouldKeep = true;
+          }
         }
-	if (shouldKeep)
-	  result.push(table[i]);
+        if (shouldKeep)
+          result.push(table[i]);
       }
       return result;
     }
@@ -131,13 +182,20 @@
     {
       var table = sendRequest('getData');
       for (var i = 1; i < table.length; i++) {
-        var str = table[i][0];
-        var year = parseInt(str.substring(0, 4));
-        var month = parseInt('1' + str.substring(5, 7)) - 100;
-        var day = parseInt('1' + str.substring(8, 10)) - 100;
-        table[i][0] = new Date(year, month - 1, day);
+        table[i][0] = parseDate(table[i][0]);
       }
       return table;
+    }
+    
+    // Takes a string of the form 2015-01-25 and returns a Date object in local time zone.
+    function parseDate(str)
+    {
+      var year = parseInt(str.substring(0, 4));
+      var month = parseInt('1' + str.substring(5, 7)) - 100;
+      var day = parseInt('1' + str.substring(8, 10)) - 100;
+      // var dt = new Date(Date.UTC(year, month - 1, day));
+      var dt = new Date(year, month - 1, day);
+      return dt;
     }
     
     function sendRequest(action, params)
