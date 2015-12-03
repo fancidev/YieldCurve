@@ -8,443 +8,443 @@
   <script type="text/javascript" src="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/canvasjs-1.8.0-beta4-mod.js"></script>
   <script type="text/javascript" src="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/jquery.canvasjs.js"></script>
   <script type="text/javascript">
-    $(function () {
-      // Time series chart.
-      $("#timeSeriesChart").CanvasJSChart(
-      {
-        title: {
-          text: 'US Swap Rates Historical Time Series',
-          fontSize: 16
-        },
-        toolTip: { shared: true, animationEnabled: false, enabled: false },
-	//dataPointWidthRatio: 1.0,
-	dataPointWidth: 3,
-        legend: { 
-          horizontalAlign: 'left', 
-          verticalAlign: 'center', 
-          fontSize: 12,
-          cursor: 'pointer',
-          itemclick: function (e) { toggleVisibility(e.dataSeries); e.chart.render(); }
-        },
-        axisX: {
-          valueFormatString: 'DD-MMM-YYYY',
-          labelFontSize: 12,
-          gridThickness: 1,
-          gridColor: 'gray',
-          gridDashType: 'dash',
-          stripLines: [{
-            labelBackgroundColor: '#444444',
-            labelFormatter: function (e) { return CanvasJS.formatDate(e.stripLine.value, 'DD-MMM-YYYY'); }
-          }]
-        },
-        axisY: {
-          gridThickness: 1,
-          gridColor: 'gray',
-          gridDashType: 'dash',
-          labelFontSize: 12,
-          labelFormatter: function (e) { return CanvasJS.formatNumber(e.value, '0.00'); }
-        },
-        zoomEnabled: true,
-        data: [],
-        dataTable: undefined // filled by drawTimeSeries
-      });
-      
-      // Term structure chart.
-      $("#termStructureChart").CanvasJSChart(
-      {
-        title: {
-          text: 'US Swap Rate Term Structure',
-          fontSize: 16
-        },
-        toolTip: { shared: true, animationEnabled: false },
-        legend: { 
-          //horizontalAlign: 'center', 
-          //verticalAlign: 'bottom', 
-          fontSize: 12
-          //cursor: 'pointer',
-          //itemclick: function (e) { toggleVisibility(e.dataSeries); e.chart.render(); }
-        },
-        axisX: {
-          //valueFormatString: 'DD-MMM-YYYY',
-          labelFontSize: 12,
-          minimum: 0,
-          gridThickness: 1,
-          gridColor: 'gray',
-          gridDashType: 'dash'
-          //stripLines: [{
-          //  labelBackgroundColor: '#444444',
-          //  labelFormatter: function (e) { return CanvasJS.formatDate(e.stripLine.value, 'DD-MMM-YYYY'); }
-          //}]
-        },
-        axisY: {
-          labelFontSize: 12,
-          gridThickness: 1,
-          gridColor: 'gray',
-          gridDashType: 'dash',
-          labelFormatter: function (e) { return CanvasJS.formatNumber(e.value, '0.00'); }
-        },
-        data: [ ]
-      });
-      
-      // Handle key events on the time series chart.
-      $("#timeSeriesChart")
-        .attr('tabindex', '0')
-        .keydown(handleTimeSeriesKeyDown)
-	.mousedown(handleTimeSeriesMouseDown);
-    });
-    
-    function toggleVisibility(dataSeries)
-    {
-      if (typeof(dataSeries.visible) === "undefined" || dataSeries.visible) {
-        dataSeries.visible = false;
-      } else {
-        dataSeries.visible = true;
-      }
-    }
+$(function () {
+	// Time series chart.
+	$("#timeSeriesChart").CanvasJSChart({
+		title: {
+			text: 'US Swap Rates Historical Time Series',
+			fontSize: 16
+		},
+		toolTip: {
+			shared: true,
+			animationEnabled: false, 
+			enabled: false 
+		},
+		//dataPointWidthRatio: 1.0,
+		dataPointWidth: 3,
+		legend: { 
+			horizontalAlign: 'left', 
+			verticalAlign: 'center', 
+			fontSize: 12,
+			cursor: 'pointer',
+			itemclick: function (e) { toggleVisibility(e.dataSeries); e.chart.render(); }
+		},
+		axisX: {
+			valueFormatString: 'DD-MMM-YYYY',
+			labelFontSize: 12,
+			gridThickness: 1,
+			gridColor: 'gray',
+			gridDashType: 'dash',
+			stripLines: [{
+				labelBackgroundColor: '#444444',
+				labelFormatter: function (e) { return CanvasJS.formatDate(e.stripLine.value, 'DD-MMM-YYYY'); }
+			}]
+		},
+		axisY: {
+			gridThickness: 1,
+			gridColor: 'gray',
+			gridDashType: 'dash',
+			labelFontSize: 12,
+			labelFormatter: function (e) { return CanvasJS.formatNumber(e.value, '0.00'); }
+		},
+		zoomEnabled: true,
+		data: [],
+		dataTable: undefined // filled by drawTimeSeries
+	});
+	
+	// Term structure chart.
+	$("#termStructureChart").CanvasJSChart({
+		title: {
+			text: 'US Swap Rate Term Structure',
+			fontSize: 16
+		},
+		toolTip: {
+			shared: true, 
+			animationEnabled: false 
+		},
+		legend: { 
+			//horizontalAlign: 'center', 
+			//verticalAlign: 'bottom', 
+			fontSize: 12
+			//cursor: 'pointer',
+			//itemclick: function (e) { toggleVisibility(e.dataSeries); e.chart.render(); }
+		},
+		axisX: {
+			//valueFormatString: 'DD-MMM-YYYY',
+			labelFontSize: 12,
+			minimum: 0,
+			gridThickness: 1,
+			gridColor: 'gray',
+			gridDashType: 'dash'
+		},
+		axisY: {
+			labelFontSize: 12,
+			gridThickness: 1,
+			gridColor: 'gray',
+			gridDashType: 'dash',
+			labelFormatter: function (e) { return CanvasJS.formatNumber(e.value, '0.00'); }
+		},
+		data: [ ]
+	});
+	
+	// Handle key events on the time series chart.
+	$("#timeSeriesChart")
+		.attr('tabindex', '0')
+		.keydown(handleTimeSeriesKeyDown)
+		.mousedown(handleTimeSeriesMouseDown);
+});
+
+function toggleVisibility(dataSeries) 
+{
+	if (typeof(dataSeries.visible) === "undefined" || dataSeries.visible) {
+		dataSeries.visible = false;
+	} else {
+		dataSeries.visible = true;
+	}
+}
   </script>
   <script type="text/javascript">
 
-    window.onerror = function () { return true; };
+	window.onerror = function () { return true; };
 
-    $(document).ready(function () {
-      drawDefaultTimeSeries();
-      drawDefaultTermStructure();
-    });
-
-    function drawDefaultTimeSeries() 
-    {
-      var table = getTimeSeries();
-      table = subsample(table, 'w');
-      drawTimeSeries(table);
-    }
-
-    function drawTimeSeries(table) 
-    {
-      $('#timeSeriesSummary').text('Number of days: ' + (table.length - 1));
-    
-      var chart = $("#timeSeriesChart").CanvasJSChart();
-      chart.options.data.length = 0;
-      var numDates = table.length - 1;
-      var numSeries = table[0].length - 1;
-      for (var j = 1; j <= numSeries; j++) {
-        var series = { 
-          type: 'line',
-          name: table[0][j],
-          markerType: 'square',
-	  highlightEnabled: false,
-          //xValueType: 'dateTime',
-          showInLegend: true,
-          dataPoints: [],
-          click: onClickTimeSeries,
-	  focusable: false
-	  };
-        for (var i = 1; i <= numDates; i++) {
-          series.dataPoints.push( { x: table[i][0], y: table[i][j] } );
-        }
-        chart.options.data.push(series);
-      }
-      
-      // Adjust Y-axis.
-      adjustYAxisLimits(chart);
-      
-      // Add a background column chart to use as indicator.
-      var backgroundSeries = {
-        type: "rangeColumn",
-        //color: "#B0D0B0",
-	color: 'transparent',
-	highlightColor: 'orange',
-	highlightOpacity: 0.5,
-        showInLegend: false,
-	toolTipContent: null,
-	click: onClickTimeSeries,
-        dataPoints: []
-      };
-      for (var i = 1; i < table.length; i++) {
-        backgroundSeries.dataPoints.push({
-	  x: table[i][0], y: [0, 10]
+	$(document).ready(function () {
+		drawDefaultTimeSeries();
+		drawDefaultTermStructure();
 	});
-      }
-      chart.options.data.push(backgroundSeries);
-      
-      // Reverse the series so that the legend order agree with line order.
-      chart.options.data.reverse();
-      
-      // Finish up.
-      chart.dataTable = table;
-      chart.render();
-    }
-    
-    function onClickTimeSeries(e)
-    {
-      // Select the clicked date.
-      var dt = e.dataPoint.x;
-      var table = e.chart.dataTable;
-      var dates = getTableColumn(table, 0);
-      var index = dates.indexOf(dt);
-      setSelectedIndices([index]);
-    }
 
-    function subsample(table, frequency)
-    {
-      // frequency can be 'd', 'w', 'm', 'q', 'y'
-      var numDates = table.length - 1;
-      var numSeries = table[0].length - 1;
-      var result = [table[0]];
-      for (var i = 1; i <= numDates; i++)
-      {
-        var shouldKeep;
-        if (i == numDates) { // always keep the last observation
-          shouldKeep = true;
-        } else {
-          var thisDate = table[i][0];
-          var nextDate = table[i+1][0];
-          if (frequency === 'w') { // weekly
-            shouldKeep = (nextDate.getDay() <= thisDate.getDay() ||
-                          nextDate.getTime() - thisDate.getTime() >= 7*24*3600*1000);
-          } else if (frequency === 'm') { // monthly
-            shouldKeep = (thisDate.getFullYear() != nextDate.getFullYear() ||
-                          thisDate.getMonth() != nextDate.getMonth());
-          } else if (frequency === 'q') { // quarterly
-            shouldKeep = (thisDate.getFullYear() != nextDate.getFullYear() ||
-                          Math.floor(thisDate.getMonth()/3) != Math.floor(nextDate.getMonth()/3));
-          } else if (frequency === 's') { // semi-annually
-            shouldKeep = (thisDate.getFullYear() != nextDate.getFullYear() ||
-                          Math.floor(thisDate.getMonth()/6) != Math.floor(nextDate.getMonth()/6));
-          } else if (frequency === 'y') { // annually
-            shouldKeep = (thisDate.getFullYear() != nextDate.getFullYear());
-          } else { // keep by default
-            shouldKeep = true;
-          }
-        }
-        if (shouldKeep)
-          result.push(table[i]);
-      }
-      return result;
-    }
+	function drawDefaultTimeSeries() 
+	{
+		var table = getTimeSeries();
+		table = subsample(table, 'w');
+		drawTimeSeries(table);
+	}
 
-    function getTableColumn(table, columnIndex)
-    {
-      var result = [];
-      for (var i = 0; i < table.length; i++) {
-        result.push(table[i][columnIndex]);
-      }
-      return result;
-    }
-    
-    // Returns an array of the one-based indices of selected dates in the time series chart.
-    function getSelectedIndices()
-    {
-      var chart = $('#timeSeriesChart').CanvasJSChart();
-      var stripLines = chart.options.axisX.stripLines;
-      var indices = [];
-      for (var i = 0; i < stripLines.length; i++) {
-        indices.push(stripLines[i].index);
-      }
-      indices.sort();
-      return indices;
-    }
-    
-    function setSelectedIndices(indices)
-    {
-      indices.sort();
-      
-      // Draw a vertical line across the chart to highlight the selected dates.
-      var chart = $('#timeSeriesChart').CanvasJSChart();
-      var table = chart.dataTable;
-      var dates = getTableColumn(table, 0);
-      var stripLines = chart.options.axisX.stripLines;
-      stripLines.length = 0;
-      for (var i = 0; i < indices.length; i++) {
-        var dt = dates[indices[i]];
-        stripLines.push({
-	  index: indices[i],
-	  value: dt,
-	  label: CanvasJS.formatDate(dt, 'DD-MMM-YYYY'),
-          labelBackgroundColor: '#444444'
-	  //label: '▲',
-	  //labelBackgroundColor: '#00000000'
-        });
-      }
-      chart.render();
-      
-      // Plot the term structure of the selected dates on a separate chart.
-      var filtered = [table[0]];
-      indices.sort();
-      for (var i = 0; i < indices.length; i++) {
-          filtered.push(table[indices[i]]);
-      }
-      drawTermStructure(filtered);
-    }
-    
-    function handleTimeSeriesKeyDown(e) 
-    {
-      var chart = $('#timeSeriesChart').CanvasJSChart();
-      var table = chart.dataTable; // our attached property
-      if (table.length <= 1) // no observations
-        return;
+	function drawTimeSeries(table) 
+	{
+		$('#timeSeriesSummary').text('Number of days: ' + (table.length - 1));
+		
+		var chart = $("#timeSeriesChart").CanvasJSChart();
+		chart.options.data.length = 0;
+		var numDates = table.length - 1;
+		var numSeries = table[0].length - 1;
+		for (var j = 1; j <= numSeries; j++) {
+			var series = { 
+				type: 'line',
+				name: table[0][j],
+				markerType: 'square',
+				highlightEnabled: false,
+				//xValueType: 'dateTime',
+				showInLegend: true,
+				dataPoints: [],
+				click: onClickTimeSeries,
+				focusable: false
+			};
+			for (var i = 1; i <= numDates; i++) {
+				series.dataPoints.push( { x: table[i][0], y: table[i][j] } );
+			}
+			chart.options.data.push(series);
+		}
+		
+		// Adjust Y-axis.
+		adjustYAxisLimits(chart);
+		
+		// Add a background column chart to use as indicator.
+		var backgroundSeries = {
+			type: "rangeColumn",
+			//color: "#B0D0B0",
+			color: 'transparent',
+			highlightColor: 'orange',
+			highlightOpacity: 0.5,
+			showInLegend: false,
+			toolTipContent: null,
+			click: onClickTimeSeries,
+			dataPoints: []
+		};
+		for (var i = 1; i < table.length; i++) {
+			backgroundSeries.dataPoints.push({
+				x: table[i][0], y: [0, 10]
+			});
+		}
+		chart.options.data.push(backgroundSeries);
+		
+		// Reverse the series so that the legend order agree with line order.
+		chart.options.data.reverse();
+		
+		// Finish up.
+		chart.dataTable = table;
+		chart.render();
+	}
 	
-      // Left, Right, Home, End: select a single item 
-      // Ctrl+L/R/H/E: moves selection in parallel
-      // Shift+L/R/H/E: select a range of items
-      // For a list of keycodes, see https://api.jquery.com/keydown/
-      var selection;
-      switch (e.which) {
-        case 37: // left arrow
-	  selection = getSelectedIndices();
-	  if (selection.length == 0) {
-	    selection = [table.length-1];
-	  } else if (selection[0] > 1) {
-	    if (e.shiftKey) { // TBD: doesn't work well
-	      selection.push(selection[0]-1);
-	    } else if (e.ctrlKey) {
-	      for (var i = 0; i < selection.length; i++)
-	        --selection[i];
-            } else {
-	      selection = [selection[0]-1];
-	    }
-	  }
-	  setSelectedIndices(selection);
-	  break;
-	case 39: // right arrow
-	  selection = getSelectedIndices();
-	  if (selection.length == 0) {
-	    selection = [1];
-	  } else if (selection[selection.length-1] < table.length-1) {
-	    if (e.shiftKey) { // TBD: doesn't work well
-	      selection.push(selection[selection.length-1]+1);
-	    } else if (e.ctrlKey) {
-	      for (var i = 0; i < selection.length; i++)
-	        ++selection[i];
-            } else {
-	      selection = [selection[selection.length-1]+1];
-	    }
-	  }
-	  setSelectedIndices(selection);
-	  break;
-	  break;
-	case 36: // home
-	  if (table.length > 1) {
-	    setSelectedIndices([1]);
-	  }
-	  break;
-	case 35: // end
-	  if (table.length > 1) {
-	    setSelectedIndices([table.length-1]);
-	  }
-	  break;
-      }
-    }
-    
-    function handleTimeSeriesMouseDown(e)
-    {
-      // Focus the chart area to capture keyboard events.
-      $('#timeSeriesChart').focus();
-    }
+	function onClickTimeSeries(e)
+	{
+		// Select the clicked date.
+		var dt = e.dataPoint.x;
+		var table = e.chart.dataTable;
+		var dates = getTableColumn(table, 0);
+		var index = dates.indexOf(dt);
+		setSelectedIndices([index]);
+	}
 	
-    function drawDefaultTermStructure()
-    {
-      var table = getTimeSeries();
-      table = subsample(table, 'm');
-      table.splice(1, table.length-2); // keep latest observation only
-      drawTermStructure(table);
-    }
-
-    // Plot each row in the table as a series.
-    function drawTermStructure(table) 
-    {
-      var chart = $("#termStructureChart").CanvasJSChart();
-      var numDates = table.length - 1;
-      var numSeries = table[0].length - 1;
-      chart.options.data.length = 0; // clear existing series
-      for (var i = 1; i <= numDates; i++) {
-        var series = { 
-          type: 'line',
-          name: CanvasJS.formatDate(table[i][0], 'DD-MMM-YYYY'),
-          markerType: 'square',
-          showInLegend: true,
-          dataPoints: []
-        };
-        for (var j = 1; j <= numSeries; j++) {
-          var term = table[0][j];
-          var years = parseInt(term.substring(0, term.length - 1));
-          var value = table[i][j];
-          series.dataPoints.push( { x: years, y: value, label: table[0][j] } );
-        }
-        chart.options.data.push(series);
-      }
-      
-      adjustYAxisLimits(chart);
-      chart.render();
-    }
-
-    function adjustYAxisLimits(chart)
-    {
-      var minY = Infinity;
-      var maxY = -Infinity;
-      var data = chart.options.data;
-      for (var i = 0; i < data.length; i++) {
-        var dataPoints = data[i].dataPoints;
-        for (var j = 0; j < dataPoints.length; j++) {
-          var value = dataPoints[j].y;
-          minY = Math.min(minY, value);
-          maxY = Math.max(maxY, value);
-        }
-      }
-      
-      // Adjust the Y-axis range to half-percent with 5bp margin.
-      var margin = 0.05;
-      var roundTo = 0.50;
-      minY = Math.floor((minY - margin) / roundTo) * roundTo;
-      maxY = Math.ceil((maxY + margin) / roundTo) * roundTo;
-      chart.options.axisY.minimum = minY;
-      chart.options.axisY.maximum = maxY;
-      
-      // Note: the caller must call chart.render() to take effect.
-      // chart.render();
-    }
-    
-    function getTimeSeries()
-    {
-      var table = sendRequest('getData');
-      for (var i = 1; i < table.length; i++) {
-        table[i][0] = parseDate(table[i][0]);
-      }
-      return table;
-    }
-    
-    // Takes a string of the form 2015-01-25 and returns a Date object in local time zone.
-    function parseDate(str)
-    {
-      var year = parseInt(str.substring(0, 4));
-      var month = parseInt('1' + str.substring(5, 7)) - 100;
-      var day = parseInt('1' + str.substring(8, 10)) - 100;
-      // var dt = new Date(Date.UTC(year, month - 1, day));
-      var dt = new Date(year, month - 1, day);
-      return dt;
-    }
-    
-    function sendRequest(action, params)
-    {
-      var jsonParams = JSON.stringify(params);
-      var jsonResult;
-      if (typeof window.external.HandleRequest === 'undefined') {
-        jsonResult = mockHandleRequest(action, jsonParams);
-      } else {
-        jsonResult = window.external.HandleRequest(action, jsonParams);
-      }
-      var result = JSON.parse(jsonResult);
-      return result;
-    }
-
-    function mockHandleRequest(action, jsonParams)
-    {
-      if (action === 'getData') {
-        return '[["Date","1Y","2Y","3Y","4Y","5Y","7Y","10Y","30Y"],["2000-07-03",7.1,7.16,7.17,7.17,7.17,7.2,7.24,7.24],["2000-07-05",7.03,7.06,7.07,7.07,7.08,7.11,7.14,7.16],["2000-08-06",7.07,7.13,7.14,7.15,7.16,7.19,7.21,7.21],["2000-08-07",7.01,7.04,7.06,7.06,7.07,7.1,7.14,7.14],["2000-09-10",7.04,7.09,7.11,7.13,7.14,7.17,7.2,7.19],["2000-09-11",7.04,7.1,7.11,7.13,7.14,7.18,7.22,7.2],["2000-09-12",7.06,7.12,7.14,7.15,7.17,7.2,7.23,7.19],["2000-09-13",7.04,7.09,7.1,7.12,7.13,7.16,7.19,7.13],["2001-07-14",7.08,7.14,7.16,7.17,7.19,7.21,7.23,7.17],["2001-07-17",7.12,7.21,7.23,7.25,7.28,7.31,7.35,7.28],["2002-07-18",7.12,7.21,7.23,7.25,7.28,7.31,7.35,7.29],["2002-07-19",7.13,7.22,7.25,7.27,7.29,7.32,7.36,7.3],["2002-07-20",7.07,7.14,7.16,7.18,7.21,7.24,7.29,7.23],["2002-07-21",7.03,7.09,7.11,7.12,7.14,7.18,7.21,7.16],["2002-07-24",7.04,7.12,7.14,7.16,7.17,7.2,7.24,7.19],["2002-07-25",7.03,7.1,7.11,7.13,7.15,7.18,7.23,7.17],["2002-07-26",7.02,7.08,7.1,7.11,7.13,7.17,7.21,7.17]]';
-      } else {
-        return;
-      }
-    }
-    
+	function subsample(table, frequency)
+	{
+		// frequency can be 'd', 'w', 'm', 'q', 'y'
+		var numDates = table.length - 1;
+		var numSeries = table[0].length - 1;
+		var result = [table[0]];
+		for (var i = 1; i <= numDates; i++) {
+			var shouldKeep;
+			if (i == numDates) { // always keep the last observation
+				shouldKeep = true;
+			} else {
+				var thisDate = table[i][0];
+				var nextDate = table[i+1][0];
+				if (frequency === 'w') { // weekly
+					shouldKeep = (nextDate.getDay() <= thisDate.getDay() ||
+					              nextDate.getTime() - thisDate.getTime() >= 7*24*3600*1000);
+				} else if (frequency === 'm') { // monthly
+					shouldKeep = (thisDate.getFullYear() != nextDate.getFullYear() ||
+					              thisDate.getMonth() != nextDate.getMonth());
+				} else if (frequency === 'q') { // quarterly
+					shouldKeep = (thisDate.getFullYear() != nextDate.getFullYear() ||
+					              Math.floor(thisDate.getMonth()/3) != Math.floor(nextDate.getMonth()/3));
+				} else if (frequency === 's') { // semi-annually
+					shouldKeep = (thisDate.getFullYear() != nextDate.getFullYear() ||
+					              Math.floor(thisDate.getMonth()/6) != Math.floor(nextDate.getMonth()/6));
+				} else if (frequency === 'y') { // annually
+					shouldKeep = (thisDate.getFullYear() != nextDate.getFullYear());
+				} else { // keep by default
+					shouldKeep = true;
+				}
+			}
+			if (shouldKeep)
+				result.push(table[i]);
+		}
+		return result;
+	}
+	
+	function getTableColumn(table, columnIndex)
+	{
+		var result = [];
+		for (var i = 0; i < table.length; i++) {
+			result.push(table[i][columnIndex]);
+		}
+		return result;
+	}
+	
+	// Returns an array of the one-based indices of selected dates in the time series chart.
+	function getSelectedIndices()
+	{
+		var chart = $('#timeSeriesChart').CanvasJSChart();
+		var stripLines = chart.options.axisX.stripLines;
+		var indices = [];
+		for (var i = 0; i < stripLines.length; i++) {
+			indices.push(stripLines[i].index);
+		}
+		indices.sort();
+		return indices;
+	}
+	
+	function setSelectedIndices(indices)
+	{
+		indices.sort();
+		
+		// Draw a vertical line across the chart to highlight the selected dates.
+		var chart = $('#timeSeriesChart').CanvasJSChart();
+		var table = chart.dataTable;
+		var dates = getTableColumn(table, 0);
+		var stripLines = chart.options.axisX.stripLines;
+		stripLines.length = 0;
+		for (var i = 0; i < indices.length; i++) {
+			var dt = dates[indices[i]];
+			stripLines.push({
+				index: indices[i],
+				value: dt,
+				label: CanvasJS.formatDate(dt, 'DD-MMM-YYYY'),
+				labelBackgroundColor: '#444444'
+				//label: '▲',
+				//labelBackgroundColor: '#00000000'
+			});
+		}
+		chart.render();
+		
+		// Plot the term structure of the selected dates on a separate chart.
+		var filtered = [table[0]];
+		indices.sort();
+		for (var i = 0; i < indices.length; i++) {
+			filtered.push(table[indices[i]]);
+		}
+		drawTermStructure(filtered);
+	}
+	
+	function handleTimeSeriesKeyDown(e) 
+	{
+		var chart = $('#timeSeriesChart').CanvasJSChart();
+		var table = chart.dataTable; // our attached property
+		if (table.length <= 1) // no observations
+			return;
+		
+		// Left, Right, Home, End: select a single item 
+		// Ctrl+L/R/H/E: moves selection in parallel
+		// Shift+L/R/H/E: select a range of items
+		// For a list of keycodes, see https://api.jquery.com/keydown/
+		var selection;
+		switch (e.which) {
+			case 37: // left arrow
+				selection = getSelectedIndices();
+				if (selection.length == 0) {
+					selection = [table.length-1];
+				} else if (selection[0] > 1) {
+					if (e.shiftKey) { // TBD: doesn't work well
+						selection.push(selection[0]-1);
+					} else if (e.ctrlKey) {
+						for (var i = 0; i < selection.length; i++)
+							--selection[i];
+					} else {
+						selection = [selection[0]-1];
+					}
+				}
+				setSelectedIndices(selection);
+				break;
+			case 39: // right arrow
+				selection = getSelectedIndices();
+				if (selection.length == 0) {
+					selection = [1];
+				} else if (selection[selection.length-1] < table.length-1) {
+					if (e.shiftKey) { // TBD: doesn't work well
+						selection.push(selection[selection.length-1]+1);
+					} else if (e.ctrlKey) {
+						for (var i = 0; i < selection.length; i++)
+							++selection[i];
+					} else {
+						selection = [selection[selection.length-1]+1];
+					}
+				}
+				setSelectedIndices(selection);
+				break;
+			case 36: // home
+				if (table.length > 1) {
+					setSelectedIndices([1]);
+				}
+				break;
+			case 35: // end
+				if (table.length > 1) {
+					setSelectedIndices([table.length-1]);
+				}
+				break;
+		}
+	}
+	
+	function handleTimeSeriesMouseDown(e)
+	{
+		// Focus the chart area to capture keyboard events.
+		$('#timeSeriesChart').focus();
+	}
+	
+	function drawDefaultTermStructure()
+	{
+		// TODO: call setSelectedIndices() instead.
+		var table = getTimeSeries();
+		table = subsample(table, 'm');
+		table.splice(1, table.length-2); // keep latest observation only
+		drawTermStructure(table);
+	}
+	
+	// Plot each row in the table as a series.
+	function drawTermStructure(table) 
+	{
+		var chart = $("#termStructureChart").CanvasJSChart();
+		var numDates = table.length - 1;
+		var numSeries = table[0].length - 1;
+		chart.options.data.length = 0; // clear existing series
+		for (var i = 1; i <= numDates; i++) {
+			var series = { 
+				type: 'line',
+				name: CanvasJS.formatDate(table[i][0], 'DD-MMM-YYYY'),
+				markerType: 'square',
+				showInLegend: true,
+				dataPoints: []
+			};
+			for (var j = 1; j <= numSeries; j++) {
+				var term = table[0][j];
+				var years = parseInt(term.substring(0, term.length - 1));
+				var value = table[i][j];
+				series.dataPoints.push( { x: years, y: value, label: table[0][j] } );
+			}
+			chart.options.data.push(series);
+		}
+		
+		adjustYAxisLimits(chart);
+		chart.render();
+	}
+	
+	function adjustYAxisLimits(chart)
+	{
+		var minY = Infinity;
+		var maxY = -Infinity;
+		var data = chart.options.data;
+		for (var i = 0; i < data.length; i++) {
+			var dataPoints = data[i].dataPoints;
+			for (var j = 0; j < dataPoints.length; j++) {
+				var value = dataPoints[j].y;
+				minY = Math.min(minY, value);
+				maxY = Math.max(maxY, value);
+			}
+		}
+		
+		// Adjust the Y-axis range to half-percent with 5bp margin.
+		var margin = 0.05;
+		var roundTo = 0.50;
+		minY = Math.floor((minY - margin) / roundTo) * roundTo;
+		maxY = Math.ceil((maxY + margin) / roundTo) * roundTo;
+		chart.options.axisY.minimum = minY;
+		chart.options.axisY.maximum = maxY;
+		
+		// Note: the caller must call chart.render() to take effect.
+		// chart.render();
+	}
+	
+	function getTimeSeries()
+	{
+		var table = sendRequest('getData');
+		for (var i = 1; i < table.length; i++) {
+			table[i][0] = parseDate(table[i][0]);
+		}
+		return table;
+	}
+	
+	// Takes a string of the form 2015-01-25 and returns a Date object in local time zone.
+	function parseDate(str)
+	{
+		var year = parseInt(str.substring(0, 4));
+		var month = parseInt('1' + str.substring(5, 7)) - 100;
+		var day = parseInt('1' + str.substring(8, 10)) - 100;
+		// var dt = new Date(Date.UTC(year, month - 1, day));
+		var dt = new Date(year, month - 1, day);
+		return dt;
+	}
+	
+	function sendRequest(action, params)
+	{
+		var jsonParams = JSON.stringify(params);
+		var jsonResult;
+		if (typeof window.external.HandleRequest === 'undefined') {
+			jsonResult = mockHandleRequest(action, jsonParams);
+		} else {
+			jsonResult = window.external.HandleRequest(action, jsonParams);
+		}
+		var result = JSON.parse(jsonResult);
+		return result;
+	}
+	
+	function mockHandleRequest(action, jsonParams)
+	{
+		if (action === 'getData') {
+			return '[["Date","1Y","2Y","3Y","4Y","5Y","7Y","10Y","30Y"],["2000-07-03",7.1,7.16,7.17,7.17,7.17,7.2,7.24,7.24],["2000-07-05",7.03,7.06,7.07,7.07,7.08,7.11,7.14,7.16],["2000-08-06",7.07,7.13,7.14,7.15,7.16,7.19,7.21,7.21],["2000-08-07",7.01,7.04,7.06,7.06,7.07,7.1,7.14,7.14],["2000-09-10",7.04,7.09,7.11,7.13,7.14,7.17,7.2,7.19],["2000-09-11",7.04,7.1,7.11,7.13,7.14,7.18,7.22,7.2],["2000-09-12",7.06,7.12,7.14,7.15,7.17,7.2,7.23,7.19],["2000-09-13",7.04,7.09,7.1,7.12,7.13,7.16,7.19,7.13],["2001-07-14",7.08,7.14,7.16,7.17,7.19,7.21,7.23,7.17],["2001-07-17",7.12,7.21,7.23,7.25,7.28,7.31,7.35,7.28],["2002-07-18",7.12,7.21,7.23,7.25,7.28,7.31,7.35,7.29],["2002-07-19",7.13,7.22,7.25,7.27,7.29,7.32,7.36,7.3],["2002-07-20",7.07,7.14,7.16,7.18,7.21,7.24,7.29,7.23],["2002-07-21",7.03,7.09,7.11,7.12,7.14,7.18,7.21,7.16],["2002-07-24",7.04,7.12,7.14,7.16,7.17,7.2,7.24,7.19],["2002-07-25",7.03,7.1,7.11,7.13,7.15,7.18,7.23,7.17],["2002-07-26",7.02,7.08,7.1,7.11,7.13,7.17,7.21,7.17]]';
+		} else {
+			return;
+		}
+	}
+	
   </script>
 </head>
 

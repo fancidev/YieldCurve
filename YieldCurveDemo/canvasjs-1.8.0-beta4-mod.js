@@ -13318,7 +13318,8 @@
 
 	ToolTip.prototype.mouseMoveHandler = function (x, y) {
 
-		if (!(this._lastUpdated && (new Date().getTime() - this._lastUpdated) < 40)) {
+		var delay = 0; // milliseconds
+		if (!(this._lastUpdated && (new Date().getTime() - this._lastUpdated) < delay)) {
 			this._lastUpdated = new Date().getTime();
 			this._updateToolTip(x, y);
 		}
