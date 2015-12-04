@@ -87,9 +87,9 @@ $(function () {
 			var yy = [];
 			for (var t = 1; t <= 10; t+=1/32) {
 				xx.push(t);
-				yy.push(dN(i,p,x,t));
+				yy.push(dN(i,p,x,t,1));
 				dataPoints.push({
-					x: t, y: dN(i,p,x,t)
+					x: t, y: dN(i,p,x,t,1)
 				});
 			}
 			chart.options.data.push({
@@ -118,10 +118,36 @@ $(function () {
 			{ x: 10, y: 5.29 },
 			{ x: 30, y: 5.41 }
 		];
-		var XY = bsplineInterp(dataPoints, 3, [
-			{ knotIndex:  0, derivOrder: 1, derivValue: 0 },
-			{ knotIndex: -1, derivOrder: 1, derivValue: 0 },
-		]);
+		var degree = 5;
+		var XY;
+		if (degree == 1) { // linear 
+			XY = bsplineInterp(dataPoints, 1, []);
+		} else if (degree == 2) { // quadratic, flat rhs deriv
+			XY = bsplineInterp(dataPoints, 2, [
+				{ knotIndex: -1, derivOrder: 1, derivValue: 0 },
+			]);		
+		} else if (degree == 3) { // natural cubic spline
+			XY = bsplineInterp(dataPoints, 3, [
+				{ knotIndex:  0, derivOrder: 2, derivValue: 0 },
+				{ knotIndex: -1, derivOrder: 2, derivValue: 0 },
+			]);
+		} else if (degree == 4) { // quartic spline
+			XY = bsplineInterp(dataPoints, 4, [
+				{ knotIndex:  0, derivOrder: 2, derivValue: 0 },
+				{ knotIndex: -1, derivOrder: 2, derivValue: 0 },
+				{ knotIndex: -1, derivOrder: 1, derivValue: 0 },
+			]);
+		} else if (degree == 5) { // quintic spline
+			XY = bsplineInterp(dataPoints, 5, [
+				{ knotIndex:  0, derivOrder: 2, derivValue: 0 },
+				{ knotIndex: -1, derivOrder: 3, derivValue: 0 },
+				{ knotIndex: -1, derivOrder: 2, derivValue: 0 },
+				{ knotIndex: -1, derivOrder: 1, derivValue: 0 },
+			]);
+		} else {
+			throw 'Invalid degree';
+		}
+
 		
 		var chart = $("#termStructureChart").CanvasJSChart();
 		chart.options.data.length = 0; // clear existing series
@@ -277,18 +303,18 @@ $(function () {
 			if (!(knotIndex >= 0 && knotIndex < n)) {
 				throw 'Invalid knot index: ' + knotIndex;
 			}
-			if (derivOrder != 1) {
-				throw 'Only first-order derivative is supported.';
+			if (!(derivOrder >= 1 && derivOrder < p)) {
+				throw 'Invalid order of derivative.';
 			}
 			// derivValue is ignored
 			
 			// The first knot and last knot has 2 non-zero
 			// derivatives; the interior knots each has 3
-			// non-zero derivatives.
+			// non-zero derivatives. <- TBC
 			C[n+k] = zeroVector(n+p-1);
 			var i = knotIndex;
 			for (var j = 0; j < p; j++) {
-				C[n+k][i+j] = dN(i+j,p,xx,x[i]);
+				C[n+k][i+j] = dN(i+j,p,xx,x[i],derivOrder);
 			}
 		}
 
@@ -358,18 +384,17 @@ $(function () {
 	
 	// Derivative of B-spline basis Bezier basis function: N[i,n,a](u)
 	// See the book
-	function dN(i, n, a, u)
+	function dN(i, n, a, u, d)
 	{
+		if (d == 0) {
+			return N(i, n, a, u);
+		}
 		if (n == 0) {
 			return NaN;
 		}
-		//if (a[i+n] == a[i] || a[i+n+1] == a[i+1]) {
-		//	return NaN;
-		//}
-		//return n/(a[i+n]-a[i])*N(i,n-1,a,u)-n/(a[i+n+1]-a[i+1])*N(i+1,n-1,a,u);
 		var v1 = (a[i+n] - a[i] == 0)? 1 : (a[i+n] - a[i]);
 		var v2 = (a[i+n+1] - a[i+1] == 0)? 1 : (a[i+n+1] - a[i+1]);
-		return n/v1*N(i,n-1,a,u)-n/v2*N(i+1,n-1,a,u);
+		return n/v1*dN(i,n-1,a,u,d-1)-n/v2*dN(i+1,n-1,a,u,d-1);
 	}
 	
   </script>
