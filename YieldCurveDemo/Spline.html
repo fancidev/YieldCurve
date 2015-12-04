@@ -7,6 +7,13 @@
   <script type="text/javascript" src="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/canvasjs-1.8.0-beta4-mod.js"></script>
   <script type="text/javascript" src="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/jquery.canvasjs.js"></script>
   <script type="text/javascript" src="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/numeric-1.2.6.js"></script>
+
+  <script type="text/javascript" src="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/jqwidgets/jqxcore.js"></script>
+  <script type="text/javascript" src="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/jqwidgets/jqxbuttons.js"></script>
+  <script type="text/javascript" src="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/jqwidgets/jqxscrollbar.js"></script>
+  <script type="text/javascript" src="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/jqwidgets/jqxlistbox.js"></script>
+  <script type="text/javascript" src="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/jqwidgets/jqxdropdownlist.js"></script>
+  <link rel="stylesheet" href="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/jqwidgets/styles/jqx.base.css" type="text/css" />
   
   <script type="text/javascript">
 $(function () {
@@ -46,7 +53,25 @@ $(function () {
 	window.onerror = function () { return true; };
 
 	$(document).ready(function () {
-		drawTermStructure();
+		var defaultPresetIndex = 0;
+		
+		$("#presetList").jqxDropDownList({
+			source: splinePresets.map(function(p){return p.name;}), 
+			selectedIndex: defaultPresetIndex, 
+			width: 100, 
+			height: 20,
+			autoDropDownHeight: true,
+			animationType: 'none',
+		});
+		$("#presetList").on('select', function (e) {
+			if (e && e.args) {
+				var index = e.args.index;
+				drawTermStructure(splinePresets[index]);
+			}
+		});
+
+		drawTermStructure(splinePresets[defaultPresetIndex]);
+		//drawBumpResponse(splinePresets[defaultPresetIndex]);
 		//drawBezierBasis();
 	});
 	
@@ -105,66 +130,90 @@ $(function () {
 		chart.render();
 	}
 	
-	// Plot each row in the table as a series.
-	function drawTermStructure() 
+	var splinePresets = [
 	{
-		var dataPoints = [
-			{ x: 1, y: 5.39 },
-			{ x: 2, y: 5.21 },
-			{ x: 3, y: 5.16 },
-			{ x: 4, y: 5.16 },
-			{ x: 5, y: 5.18 },
-			{ x: 7, y: 5.23 },
-			{ x: 10, y: 5.29 },
-			{ x: 30, y: 5.41 }
-		];
-		var degree = 5;
-		var XY;
-		if (degree == 1) { // linear 
-			XY = bsplineInterp(dataPoints, 1, []);
-		} else if (degree == 2) { // quadratic, flat rhs deriv
-			XY = bsplineInterp(dataPoints, 2, [
-				{ knotIndex: -1, derivOrder: 1, derivValue: 0 },
-			]);		
-		} else if (degree == 3) { // natural cubic spline
-			XY = bsplineInterp(dataPoints, 3, [
-				{ knotIndex:  0, derivOrder: 2, derivValue: 0 },
-				{ knotIndex: -1, derivOrder: 2, derivValue: 0 },
-			]);
-		} else if (degree == 4) { // quartic spline
-			XY = bsplineInterp(dataPoints, 4, [
-				{ knotIndex:  0, derivOrder: 2, derivValue: 0 },
-				{ knotIndex: -1, derivOrder: 2, derivValue: 0 },
-				{ knotIndex: -1, derivOrder: 1, derivValue: 0 },
-			]);
-		} else if (degree == 5) { // quintic spline
-			XY = bsplineInterp(dataPoints, 5, [
-				{ knotIndex:  0, derivOrder: 2, derivValue: 0 },
-				{ knotIndex: -1, derivOrder: 3, derivValue: 0 },
-				{ knotIndex: -1, derivOrder: 2, derivValue: 0 },
-				{ knotIndex: -1, derivOrder: 1, derivValue: 0 },
-			]);
-		} else {
-			throw 'Invalid degree';
-		}
-
+		name: 'Linear',
+		degree: 1,
+		conditions: []
+	},
+	{
+		name: 'Quadratic',
+		degree: 2,
+		conditions: [ 
+			{ knotIndex: -1, derivOrder: 1, derivValue: 0 },
+		]
+	},
+	{
+		name: 'Cubic',
+		degree: 3,
+		conditions: [
+			{ knotIndex:  0, derivOrder: 2, derivValue: 0 },
+			{ knotIndex: -1, derivOrder: 2, derivValue: 0 },
+		]
+	},
+	{
+		name: 'Quartic',
+		degree: 4,
+		conditions: [
+			{ knotIndex:  0, derivOrder: 2, derivValue: 0 },
+			{ knotIndex: -1, derivOrder: 2, derivValue: 0 },
+			{ knotIndex: -1, derivOrder: 1, derivValue: 0 },
+		]
+	},
+	{
+		name: 'Quintic',
+		degree: 5,
+		conditions: [
+			{ knotIndex:  0, derivOrder: 2, derivValue: 0 },
+			{ knotIndex: -1, derivOrder: 3, derivValue: 0 },
+			{ knotIndex: -1, derivOrder: 2, derivValue: 0 },
+			{ knotIndex: -1, derivOrder: 1, derivValue: 0 },			
+		]
+	}];
+	
+	var defaultDataPoints = [
+		{ x: 0.25, y: 5.39 },
+		{ x: 1, y: 5.39 },
+		{ x: 2, y: 5.21 },
+		{ x: 3, y: 5.16 },
+		{ x: 4, y: 5.16 },
+		{ x: 5, y: 5.18 },
+		{ x: 7, y: 5.23 },
+		{ x: 10, y: 5.29 },
+		{ x: 30, y: 5.41 }
+	];
+		
+	// Plot each row in the table as a series.
+	function drawTermStructure(preset) 
+	{
+		var dataPoints = defaultDataPoints;
 		
 		var chart = $("#termStructureChart").CanvasJSChart();
 		chart.options.data.length = 0; // clear existing series
-		chart.options.data.push({
-			type: 'scatter',
-			name: 'Term structure',
-			markerType: 'square',
-			showInLegend: true,
-			dataPoints: dataPoints
-		});
-		chart.options.data.push({
-			type: 'line',
-			name: 'Interpolated',
-			markerType: 'none',
-			showInLegend: true,
-			dataPoints: XY
-		});
+		
+		// Plot input data points.
+		if (true) {
+			chart.options.data.push({
+				type: 'scatter',
+				name: 'Term structure',
+				markerType: 'square',
+				showInLegend: true,
+				dataPoints: dataPoints
+			});
+		}
+		
+		// Plot interpolated curve.
+		if (true) {
+			var XY = bsplineInterp(dataPoints, preset.degree, preset.conditions);
+			chart.options.data.push({
+				type: 'line',
+				name: preset.name + ' Spline',
+				markerType: 'none',
+				showInLegend: true,
+				dataPoints: XY
+			});
+		}
+		
 		adjustYAxisLimits(chart);
 		chart.render();
 		
@@ -178,6 +227,7 @@ $(function () {
 			markerType: 'square',
 			showInLegend: true,
 			dataPoints: [
+				{ x: 0.25, y: 5.39 },
 				{ x: 1, y: 5.39 },
 				{ x: 2, y: 5.21 },
 				{ x: 3, y: 5.16 },
@@ -189,6 +239,41 @@ $(function () {
 			]
 		});
 		adjustYAxisLimits(chart);
+		chart.render();
+	}
+	
+	function drawBumpResponse(preset)
+	{
+		var dataPoints = defaultDataPoints;		
+		var chart = $("#termStructureChart").CanvasJSChart();
+		var XY = bsplineInterp(dataPoints, preset.degree, preset.conditions);
+		
+		// bump each point
+		for (var i = 0; i < dataPoints.length; i++) {
+			var bumpedDataPoints = dataPoints.slice();
+			bumpedDataPoints[i] = {
+				x: bumpedDataPoints[i].x,
+				y: bumpedDataPoints[i].y + 0.01
+			};
+			var bumpedXY = bsplineInterp(bumpedDataPoints, preset.degree, preset.conditions);
+			var diff = [];
+			for (var j = 0; j < XY.length; j++) {
+				diff[j] = {
+					x: XY[j].x,
+					y: (bumpedXY[j].y - XY[j].y) * 100
+				};
+			}
+			chart.options.data.push({
+				type: 'line',
+				name: 'Bump ' + dataPoints[i].x + 'Y',
+				markerType: 'none',
+				showInLegend: true,
+				dataPoints: diff
+			});
+		}
+		adjustYAxisLimits(chart);
+		chart.options.title.text = preset.name + ' Spline Response Curve';
+		chart.options.toolTip.shared = false;
 		chart.render();
 	}
 	
@@ -402,6 +487,7 @@ $(function () {
 
 <body>
   <div>
+    <div>Spline: </div><div id="presetList"></div>
     <div id="termStructureChart" style="width:100%; height:400px; border-width:1px; border-style:solid; border-color:black">
       [Term Structure]
     </div>
