@@ -7,6 +7,15 @@
   <!--<script type="text/javascript" src="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/jquery.canvasjs.min.js"></script>-->
   <script type="text/javascript" src="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/canvasjs-1.8.0-beta4-mod.js"></script>
   <script type="text/javascript" src="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/jquery.canvasjs.js"></script>
+  
+  <script type="text/javascript" src="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/jqwidgets/jqxcore.js"></script>
+  <script type="text/javascript" src="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/jqwidgets/jqxbuttons.js"></script>
+  <script type="text/javascript" src="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/jqwidgets/jqxscrollbar.js"></script>
+  <script type="text/javascript" src="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/jqwidgets/jqxlistbox.js"></script>
+  <script type="text/javascript" src="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/jqwidgets/jqxcheckbox.js"></script>
+  <link rel="stylesheet" href="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/jqwidgets/styles/jqx.base.css" type="text/css" />
+  <link rel="stylesheet" href="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/jqwidgets/styles/jqx.metro.css" type="text/css" />
+  
   <script type="text/javascript">
 $(function () {
 	// Time series chart.
@@ -21,7 +30,7 @@ $(function () {
 			enabled: false 
 		},
 		//dataPointWidthRatio: 1.0,
-		dataPointWidth: 3,
+		dataPointMinWidth: 3,
 		legend: { 
 			horizontalAlign: 'left', 
 			verticalAlign: 'center', 
@@ -108,6 +117,14 @@ function toggleVisibility(dataSeries)
 	window.onerror = function () { return true; };
 
 	$(document).ready(function () {
+		$.jqx.theme = 'metro';
+		$('#seriesNames').jqxListBox({
+			width: 200, 
+			source: ['1Y','2Y','3Y','4Y','5Y'], 
+			checkboxes: true, 
+			height: 250,
+		});
+		
 		drawDefaultTimeSeries();
 		drawDefaultTermStructure();
 	});
@@ -127,6 +144,31 @@ function toggleVisibility(dataSeries)
 		chart.options.data.length = 0;
 		var numDates = table.length - 1;
 		var numSeries = table[0].length - 1;
+		
+		// Create legend box.
+		//var legend = table[0].slice(1);
+		$('#seriesNames').jqxListBox({
+			width: 100, 
+			source: table[0].slice(1).reverse(),
+			checkboxes: true, 
+			height: 250,
+		});
+		$('#seriesNames').jqxListBox('checkAll');
+		$("#seriesNames").on('checkChange', function (e) {
+			var args = e.args;
+			var index = args.item.index;
+			var checked = args.checked;
+			//alert(JSON.stringify(args));
+			//alert('a');
+			var chart = $("#timeSeriesChart").CanvasJSChart();
+			//alert('b'+index);
+			chart.options.data[index+1].visible = checked; // series 0 is background column
+			//alert('c');
+			chart.render();
+			//alert('d');
+		});
+		
+		// Add time series to the chart.
 		for (var j = 1; j <= numSeries; j++) {
 			var series = { 
 				type: 'line',
@@ -143,6 +185,7 @@ function toggleVisibility(dataSeries)
 				series.dataPoints.push( { x: table[i][0], y: table[i][j] } );
 			}
 			chart.options.data.push(series);
+			
 		}
 		
 		// Adjust Y-axis.
@@ -451,6 +494,7 @@ function toggleVisibility(dataSeries)
 <body>
   <div>
     <div><button>Click Here</button></div>
+    <div id="seriesNames"></div>
     <div id="timeSeriesChart" style="width:100%; height:200px;">[Time Series]</div>
     <div id="debugMessage"></div>
     <div id="timeSeriesSummary"></div>    
