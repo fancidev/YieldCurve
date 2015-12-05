@@ -272,11 +272,11 @@ $(function () {
 	{
 		var dataPoints = defaultDataPoints;
 		var n = dataPoints.length;
+		var Instrument = Swap; // Fra;
 		var instruments = [];
 		var marketRates = [];
 		for (var i = 0; i < n; i++) {
-			// instruments[i] = new Swap(dataPoints[i].x);
-			instruments[i] = new Fra(dataPoints[i].x);
+			instruments[i] = new Instrument(dataPoints[i].x);
 			marketRates[i] = dataPoints[i].y / 100;
 		}
 
@@ -299,16 +299,22 @@ $(function () {
 		}
 		
 		// Plot interpolated curve.
-		if (true) {
-			var XY = bsplineInterp(dataPoints, preset.degree, preset.conditions);
-			chart.options.data.push({
-				type: 'line',
-				name: preset.name + ' Spline',
-				markerType: 'none',
-				showInLegend: true,
-				dataPoints: XY
-			});
+		var PlotInstrument =  LogDf; // Swap; // LogDf;
+		var interpolatedPoints = [];
+		for (var t = dataPoints[0].x; t <= dataPoints[n-1].x; t += 1/16) {
+			var instrument = new PlotInstrument(t);
+			var impliedRate = instrument.impliedRate(discount);
+			interpolatedPoints.push({x: t, y: impliedRate*100});
+			//var XY = bsplineInterp(dataPoints, preset.degree, preset.conditions);
 		}
+		chart.options.data.push({
+			type: 'line',
+			name: '(' + preset.name + ' Spline)',
+			markerType: 'none',
+			showInLegend: true,
+			dataPoints: interpolatedPoints
+		});
+		//alert('Plotted');
 		
 		adjustYAxisLimits(chart);
 		chart.render();

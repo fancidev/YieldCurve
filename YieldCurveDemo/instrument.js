@@ -27,7 +27,6 @@
 			
 		var n = instruments.length;
 		var p = interp.degree;
-		var F = zeroVector(n + p); // extra condition F(0) = 0
 		
 		// We solve for weights[], which contains the weights
 		// applied to the b-spline bases.
@@ -52,27 +51,27 @@
 		// Use Newton's method to solve it. For each step, we solve
 		// linear equation J*delta=marketRates-impliedRates, where
 		//
-		//   J:     n-by-n square matrix
-		//   delta: n-by-1 vector of adjustments to be applied to weights[1..n]
+		//   J:     (n+p)-by-(n+p) square matrix
+		//   delta: (n+p)-by-1 vector of adjustments to be applied to weights[0..n+p-1]
 		//
 		var J = [];
-		for (var i = 0; i < n; i++) {
-			J[i] = zeroVector(n);
+		for (var i = 0; i < n+p; i++) {
+			J[i] = zeroVector(n+p);
 		}
 		var impliedRates = zeroVector(n);
 		
 		// We start with all weights equal to zero.
 		while (true) {
 			
+			// n conditions for each input instrument.
 			for (var i = 0; i < n; i++) {
 				var impliedRateDeriv = [];
 				var impliedRate = instruments[i].impliedRate(discount, impliedRateDeriv);
-				for (var j = 0; j < n; j++) {
-					J[i][j] = impliedRateDeriv[j+1];
-				}
+				J[i] = impliedRateDeriv;
 				impliedRates[i] = impliedRate;
 			}
 			
+			// Check tolerance.
 			var diff = numeric.sub(marketRates, impliedRates);
 			var maxDiff = -Infinity;
 			for (var j = 0; j < n; j++) {
@@ -81,12 +80,26 @@
 			var eps = 1.0e-8; // 0.0001 bp
 			if (maxDiff < eps)
 				break;
-			alert(maxDiff);
+			//alert(maxDiff);
 
-			var delta = numeric.solve(J, diff);
-			for (var j = 0; j < n; j++) {
-				weights[j+1] += delta[j];
+			// Additional constraints...
+			var rhs = diff.slice();
+			
+			// 1 condition for F(0) == 0.
+			J[n] = spline.evaluate(0);
+			rhs[n] = 0;
+			
+			// (p-1) conditions on derivatives; we always assume
+			// them to be equal to zero.
+			var C = spline.coefficients();
+			for (var i = n+1; i < n+p; i++) {
+				J[i] = C[i];
+				rhs[i] = 0;
 			}
+			
+			// Solve the equation.
+			var delta = numeric.solve(J, rhs);
+			numeric.addeq(weights, delta);
 		}
 		return discount;
 	}
@@ -133,7 +146,29 @@
 	}
 	
 	window.Fra = Fra;
+	
+	////////////////////////////////////////////////////////////////
+	// Ln(Df) Instrument
+	//
+	
+	var LogDf = function(maturity) {
 		
+		this._maturity = maturity;
+	};
+	
+	LogDf.prototype.maturity = function () {
+		return this._maturity;
+	}
+	
+	LogDf.prototype.impliedRate = function (discount) {
+		
+		var T = this._maturity;
+		var df = discount(T);
+		return -Math.log(df);
+	}
+	
+	window.LogDf = LogDf;
+	
 	////////////////////////////////////////////////////////////////
 	// Swap Instrument
 	//
@@ -163,15 +198,16 @@
 		
 		var T = this._maturity;
 		
-		var accrualFactor = 0.25;
 		var finalDfDeriv = [];
 		var finalDf = discount(T, finalDfDeriv);
 		
-		var annuityFactorDeriv = numeric.dot(finalDfDeriv, accrualFactor);
-		var annuityFactor = accrualFactor * finalDf;
-		for (var t = T - accrualFactor; t > 0; t -= 0.25) {
+		var annuityFactorDeriv = zeroVector(finalDfDeriv.length);
+		var annuityFactor = 0.0;
+		var frequency = 0.25;
+		for (var t = T; t > 0; t -= frequency) {
 			var dfDeriv = [];
 			var df = discount(t, dfDeriv);
+			var accrualFactor = Math.min(frequency, t);
 			annuityFactor += accrualFactor * df;
 			numeric.addeq(annuityFactorDeriv, numeric.dot(accrualFactor, dfDeriv));
 		}
