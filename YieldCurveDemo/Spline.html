@@ -15,6 +15,8 @@
   <script type="text/javascript" src="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/jqwidgets/jqxdropdownlist.js"></script>
   <link rel="stylesheet" href="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/jqwidgets/styles/jqx.base.css" type="text/css" />
   
+  <script type="text/javascript" src="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/bspline.js"></script>
+  
   <script type="text/javascript">
 $(function () {
 	
@@ -332,140 +334,25 @@ $(function () {
 		// chart.render();
 	}
 	
-	// Interpolate a vector of n points
-	// { x: 1, y: 5.39 }, { x: 2, y: 5.21 }, ...
-	// order:
-	//   1 - linear
-	//   2 - quadratic spline
-	//   3 - cubic spline
-	// extraConditions:
-	//   An array of extra conditions to impose on the derivative
-	//   on selected knot points. The number of conditions must be
-	//   equal to (p - 1). Each condition is a named tuple:
-	//   {
-	//     knotIndex:  = zero-based knot index 
-	//     derivOrder: order of derivative (1, 2, ...)
-	//     derivValue: explicit value, or null for Not-A-Knot
-	//   }
-	// RETURN VALUE
-	//   returns a vector of points of interpolated curve
-	function bsplineInterp(points, order, extraConditions)
+	function bsplineInterp(points, degree, conditions)
 	{
-		var n = points.length;
-		var p = order;
-		
-		// add multiplicity knots to begin and end
 		var x = points.map(function(pt){return pt.x});
-		//var y = points.map(function(pt){return pt.y});
+		var y = points.map(function(pt){return pt.y});
 		var xMin = x[0];
 		var xMax = x[x.length-1];
-		var xx = x.slice();
-		for (var i = 0; i < p; i++) {
-			xx.splice(0, 0, xMin);
-			xx.push(xMax);
-			//y.splice(0, 0, NaN);
-			//y.push(NaN);
-		}
-		// Now:
-		// x[0..p-1]   = multiplicity knots
-		// x[p..p+n-1] = user-supplied real knots
-		// x[p+n..p+n+p-1] = multiplicity knots
 		
-		// Compute the values of b-spline bases at user-supplied
-		// knot points. There are (n+p-1) bases. The first basis
-		// is always = 1 at the first point. The last basis is
-		// always = 1 at the last point.
+		var spline = new BSpline(x, degree, conditions);
+		var yy = y.concat(conditions.map(function(c){return c.derivValue;}));
 		
-		// A vector of (n+p-1) coefficients, a[0..(n-1)+(p-1)],
-		// are applied to the bspline bases. We need (n+p-1)
-		// equations to solve these coeffcients. The first n
-		// equations correspond to the user supplied knot
-		// values. The rest (p-1) equations correspond to the
-		// derivative conditions at selected knot points.
-		
-		var C = []; // (n+p-1)-by-(n+p-1) square matrix
-		
-		// First knot:
-		C[0] = zeroVector(n+p-1);
-		C[0][0] = 1.0;
-		
-		// Last knot:
-		C[n-1] = zeroVector(n+p-1);
-		C[n-1][n+p-2] = 1.0;
-		
-		// Interior knots: 
-		for (var i = 1; i < n-1; i++) {
-			// Each has exactly p non-zero bases.
-			C[i] = zeroVector(n+p-1);
-			for (var j = 0; j < p; j++) {
-				C[i][i+j] = N(i+j,p,xx,x[i]);
-			}
-		}
-		
-		// Additional conditions:
-		if (extraConditions.length != p - 1) {
-			throw 'Wrong number of extra conditions.';
-		}
-		for (var k = 0; k < p - 1; k++) {
-			var cond = extraConditions[k];
-			var knotIndex = cond['knotIndex'];
-			var derivOrder = cond['derivOrder'];
-			var derivValue = cond['derivValue'];
-			if (knotIndex < 0) {
-				knotIndex += n;
-			}
-			if (!(knotIndex >= 0 && knotIndex < n)) {
-				throw 'Invalid knot index: ' + knotIndex;
-			}
-			if (!(derivOrder >= 1 && derivOrder < p)) {
-				throw 'Invalid order of derivative.';
-			}
-			// derivValue is ignored
-			
-			// The first knot and last knot has 2 non-zero
-			// derivatives; the interior knots each has 3
-			// non-zero derivatives. <- TBC
-			C[n+k] = zeroVector(n+p-1);
-			var i = knotIndex;
-			for (var j = 0; j < p; j++) {
-				C[n+k][i+j] = dN(i+j,p,xx,x[i],derivOrder);
-			}
-		}
-
-		// Debug output.
-		var invC = numeric.inv(C);
-		$('#debugOutput').html(
-			'<pre>'+numeric.prettyPrint(C)+'</pre>'+
-			'<pre>Inverse</pre>' +
-			'<pre>'+numeric.prettyPrint(invC)+'</pre>');
-			
-		// Compute the weights of bspline bases such that
-		// the interpolated curve passes all the user-supplied
-		// points and satisfies all the extra conditions.
-		var y = points.map(function(pt){return pt.y});
-		for (var k = 0; k < p - 1; k++) {
-			y.push(extraConditions[k].derivValue);
-		}
-		var weights = numeric.dot(invC, y);
-		
-		// Given a grid of X values, compute their interpolated
-		// values.
 		var gridX = numeric.linspace(xMin, xMax, 200);
+		var gridY = spline.fit(yy, gridX);
 		var gridXY = [];
 		for (var i = 0; i < gridX.length; i++) {
-			var basisValues = [];
-			// TODO: in fact we only need to sum (p+1) terms
-			for (var j = 0; j < n+p-1; j++) {
-				basisValues[j] = N(j,p,xx,gridX[i]);
-			}
-			gridXY.push({
-				x: gridX[i],
-				y: numeric.dot(weights, basisValues)
-			});
+			gridXY.push({ x: gridX[i], y: gridY[i] });
 		}
 		return gridXY;
 	}
-	
+
 	function zeroVector(length)
 	{
 		var v = [];
