@@ -204,6 +204,23 @@
 		return f;
 	}
 	
+	// Returns the i'th b-spline basis of this family.
+	BSpline.prototype.basis = function(i, derivOrder) {
+
+		var n = this.n;
+		var p = this.p;
+		var xx = this.xx;
+		
+		if (!(i >= 0 && i < n+p-1))
+			throw 'Invalid basis number: ' + i;
+		if (typeof(derivOrder) === 'undefined')
+			derivOrder = 0;
+		
+		return function(x) {
+			return dN(i, p, xx, x, derivOrder);
+		}
+	}
+	
 	function zeroVector(length)
 	{
 		var v = [];
@@ -233,7 +250,6 @@
 		var alpha2 = (a[i+1+n]-a[i+1]==0)? 0 : (u-a[i+1])/(a[i+1+n]-a[i+1]);
 		return alpha1*N(i,n-1,a,u)+(1-alpha2)*N(i+1,n-1,a,u);
 	}
-	
 	
 	// Derivative of B-spline basis Bezier basis function: N[i,n,a](u)
 	// See the book
