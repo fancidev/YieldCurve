@@ -172,8 +172,8 @@ $(function () {
 		degree: 4,
 		conditions: [
 			{ knotIndex:  0, derivOrder: 2, derivValue: 0 },
+			{ knotIndex: -1, derivOrder: 3, derivValue: 0 },
 			{ knotIndex: -1, derivOrder: 2, derivValue: 0 },
-			{ knotIndex: -1, derivOrder: 1, derivValue: 0 },
 		]
 	},
 	{
@@ -181,9 +181,9 @@ $(function () {
 		degree: 5,
 		conditions: [
 			{ knotIndex:  0, derivOrder: 2, derivValue: 0 },
+			{ knotIndex: -1, derivOrder: 4, derivValue: 0 },
 			{ knotIndex: -1, derivOrder: 3, derivValue: 0 },
-			{ knotIndex: -1, derivOrder: 2, derivValue: 0 },
-			{ knotIndex: -1, derivOrder: 1, derivValue: 0 },			
+			{ knotIndex: -1, derivOrder: 2, derivValue: 0 },			
 		]
 	}];
 	
@@ -299,7 +299,7 @@ $(function () {
 		}
 		
 		// Plot interpolated curve.
-		var PlotInstrument =  LogDf; // Swap; // LogDf;
+		var PlotInstrument = Swap; // InstFwd; // LogDf; // Swap; // LogDf;
 		var interpolatedPoints = [];
 		for (var t = dataPoints[0].x; t <= dataPoints[n-1].x; t += 1/16) {
 			var instrument = new PlotInstrument(t);

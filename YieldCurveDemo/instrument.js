@@ -170,6 +170,32 @@
 	window.LogDf = LogDf;
 	
 	////////////////////////////////////////////////////////////////
+	// InstFwd Instrument (instantaneous forward)
+	//
+	
+	var InstFwd = function(maturity) {
+		
+		this._maturity = maturity;
+		this._dt = 1/128;
+		this._start = new LogDf(maturity - this._dt);
+		this._end = new LogDf(maturity);
+	};
+	
+	InstFwd.prototype.maturity = function () {
+		return this._maturity;
+	}
+	
+	InstFwd.prototype.impliedRate = function (discount) {
+		
+		var vStart = this._start.impliedRate(discount);
+		var vEnd = this._end.impliedRate(discount);
+		var dt = this._dt;
+		return (vEnd - vStart) / dt;
+	}
+	
+	window.InstFwd = InstFwd;
+	
+	////////////////////////////////////////////////////////////////
 	// Swap Instrument
 	//
 	
