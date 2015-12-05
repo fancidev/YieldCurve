@@ -2,11 +2,12 @@
 	
 	'use strict';
 	
-	// Creates a B-spline that interpolates the given points.
+	// Creates a family of B-splines that interpolate the given
+	// points and satisfy the given derivative conditions.
 	//
 	// PARAMETERS
 	// 
-	//   points    X-coordinates of the points being interpolated.
+	//   x         X-coordinates of the points being interpolated.
 	//
 	//   degree    Degree of the spline, must be a positive integer.
 	//             1 - linear
@@ -22,18 +23,20 @@
 	//               knotIndex:  zero-based knot index; if negative,
 	//                           the index is counted backward
 	//               derivOrder: order of derivative (1, 2, ...)
-	//             //  derivValue: explicit value, or null for Not-A-Knot
 	//             }
 	//
 	// RETURN VALUE
 	//
-	//   A BSpline object.
+	//   A BSpline object that represents a family of b-splines.
 	//
-	var BSpline = function (points, degree, conditions)
+	var BSpline = function (x, degree, conditions)
 	{
-		var x = points;
-		var n = points.length;
+		var n = x.length;
 		var p = degree;
+		if (n < 2)
+			throw 'Must have at least 2 points.';
+		if (p < 1)
+			throw 'Degree must be at least 1.';
 		
 		// add multiplicity knots to begin and end
 		var xMin = x[0];
@@ -87,7 +90,6 @@
 			var cond = conditions[k];
 			var knotIndex = cond['knotIndex'];
 			var derivOrder = cond['derivOrder'];
-			//var derivValue = cond['derivValue'];
 			if (knotIndex < 0) {
 				knotIndex += n;
 			}
@@ -97,7 +99,6 @@
 			if (!(derivOrder >= 1 && derivOrder < p)) {
 				throw 'Invalid order of derivative: ' + derivOrder;
 			}
-			// derivValue is ignored
 			
 			// The first knot and last knot has 2 non-zero
 			// derivatives; the interior knots each has 3
@@ -129,26 +130,27 @@
 		this.xx = xx;
 	}
 	
-	// Gets the coefficient matrix, C, of the b-spline.
+	// Gets the coefficient matrix, C, of the b-spline family.
 	// 
 	// RETURN VALUE
 	// 
 	//   A (n+p-1)-by-(n+p-1) square matrix C such that C*w = b
-	//   will give the weights for each spline basis, where
+	//   uniquely determines a spline of this family, where
+	//     w = weights of the bspline bases
 	//     n = number of interpolated points
 	//     p = degree of the spline
-	//     b = (n+p-1)-by-1 vector of `realized' constraints
+	//     b = (n+p-1)-by-1 vector of `realization' constraints
 	//
 	BSpline.prototype.coefficients = function() {
 		return this.C;
 	};
 	
-	// Gets the value of the spline at a given X-coordinate.
+	// Gets the value of the spline family at a given X-coordinate.
 	//
 	// RETURN VALUE
 	//
 	//   A (n+p-1)-element vector, c, whose inner product with
-	//   the spline's weights gives the spline's value at x.
+	//   a spline's weight vector gives the spline's value at x.
 	BSpline.prototype.evaluate = function(x) {
 		
 		var n = this.n;
@@ -160,13 +162,22 @@
 		return c;
 	};
 	
-	// Gets the weights of the spline bases that satisfy the given
-	// constraints, y. The first n constraints are interpreted as
-	// values at the knots. The rest (p-1) constraints are 
-	// interpreted as the derivative values at supplied knots.
-	// Any unspecified derivative constraint is supposed to take
-	// value 0.
-	BSpline.prototype.weights = function(y) {
+	// Creates an instance of the b-spline family by fitting to the
+	// given y values and derivative values.
+	//
+	// PARAMETERS
+	//
+	//   y    The first n constraints are interpreted as values at
+	//        knot points; the rest (p-1) constraints are interpreted
+	//        as the derivative values at supplied knots. Any
+	//        unspecified derivative constraint is supposed to be 0.
+	//
+	// RETURN VALUE
+	//
+	//   A univariate function, f, such that y=f(x) evaluates to 
+	//   the spline value at x.
+	//
+	BSpline.prototype.fit = function(y) {
 		
 		var n = this.n;
 		var p = this.p;
@@ -183,22 +194,16 @@
 		
 		var C = this.C;
 		var w = numeric.solve(C, y);
-		return w;
+		var obj = this;
+		
+		var f = function(x) {
+			var c = obj.evaluate(x);
+			return numeric.dot(c, w);
+		};
+		//f.weights = w;
+		return f;
 	}
 	
-	// (Convenience function) Fits a spline to the given y values 
-	// and returns its value on a set of points.
-	BSpline.prototype.fit = function(y, gridX) {
-		
-		var w = this.weights(y);
-		var gridY = gridX.slice();
-		for (var i = 0; i < gridX.length; i++) {
-			var c = this.evaluate(gridX[i]);
-			gridY[i] = numeric.dot(c, w);
-		}
-		return gridY;
-	}
-		
 	function zeroVector(length)
 	{
 		var v = [];

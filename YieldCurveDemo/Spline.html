@@ -337,18 +337,20 @@ $(function () {
 	function bsplineInterp(points, degree, conditions)
 	{
 		var x = points.map(function(pt){return pt.x});
+		var spline = new BSpline(x, degree, conditions);
+		
 		var y = points.map(function(pt){return pt.y});
+		var yy = y.concat(conditions.map(function(c){return c.derivValue;}));
+		var f = spline.fit(yy);
+		
 		var xMin = x[0];
 		var xMax = x[x.length-1];
-		
-		var spline = new BSpline(x, degree, conditions);
-		var yy = y.concat(conditions.map(function(c){return c.derivValue;}));
-		
 		var gridX = numeric.linspace(xMin, xMax, 200);
-		var gridY = spline.fit(yy, gridX);
 		var gridXY = [];
 		for (var i = 0; i < gridX.length; i++) {
-			gridXY.push({ x: gridX[i], y: gridY[i] });
+			var x = gridX[i];
+			var y = f(x);
+			gridXY.push({x: x, y: y});
 		}
 		return gridXY;
 	}
