@@ -45,6 +45,35 @@ $(function () {
 		},
 		data: [ ]
 	});
+	
+	$("#bumpResponseChart").CanvasJSChart({
+		title: {
+			text: 'Bump Response',
+			fontSize: 16
+		},
+		legend: {
+			fontSize: 12,
+		},
+		axisX: {
+			labelFontSize: 12,
+			minimum: 0,
+			gridThickness: 1,
+			gridColor: 'gray',
+			gridDashType: 'dash'
+		},
+		axisY: {
+			labelFontSize: 12,
+			gridThickness: 1,
+			gridColor: 'gray',
+			gridDashType: 'dash',
+			interval: 1.0,
+			//labelFormatter: function (e) { return CanvasJS.formatNumber(e.value, '0.00'); }
+		},
+		toolTip: {
+			shared: false
+		},
+		data: [ ]
+	});
 });
 
   </script>
@@ -53,12 +82,12 @@ $(function () {
 	window.onerror = function () { return true; };
 
 	$(document).ready(function () {
-		var defaultPresetIndex = 0;
+		var defaultPresetIndex = 2;
 		
 		$("#presetList").jqxDropDownList({
-			source: splinePresets.map(function(p){return p.name;}), 
+			source: splinePresets.map(function(p){return p.name+' Spline';}), 
 			selectedIndex: defaultPresetIndex, 
-			width: 100, 
+			width: 150, 
 			height: 20,
 			autoDropDownHeight: true,
 			animationType: 'none',
@@ -67,11 +96,12 @@ $(function () {
 			if (e && e.args) {
 				var index = e.args.index;
 				drawTermStructure(splinePresets[index]);
+				drawBumpResponse(splinePresets[index]);
 			}
 		});
 
 		drawTermStructure(splinePresets[defaultPresetIndex]);
-		//drawBumpResponse(splinePresets[defaultPresetIndex]);
+		drawBumpResponse(splinePresets[defaultPresetIndex]);
 		//drawBezierBasis();
 	});
 	
@@ -245,7 +275,8 @@ $(function () {
 	function drawBumpResponse(preset)
 	{
 		var dataPoints = defaultDataPoints;		
-		var chart = $("#termStructureChart").CanvasJSChart();
+		var chart = $("#bumpResponseChart").CanvasJSChart();
+		chart.options.data.length = 0;
 		var XY = bsplineInterp(dataPoints, preset.degree, preset.conditions);
 		
 		// bump each point
@@ -265,15 +296,13 @@ $(function () {
 			}
 			chart.options.data.push({
 				type: 'line',
-				name: 'Bump ' + dataPoints[i].x + 'Y',
+				name: dataPoints[i].x + 'Y',
 				markerType: 'none',
 				showInLegend: true,
 				dataPoints: diff
 			});
 		}
-		adjustYAxisLimits(chart);
-		chart.options.title.text = preset.name + ' Spline Response Curve';
-		chart.options.toolTip.shared = false;
+		//adjustYAxisLimits(chart);
 		chart.render();
 	}
 	
@@ -487,9 +516,20 @@ $(function () {
 
 <body>
   <div>
-    <div>Spline: </div><div id="presetList"></div>
-    <div id="termStructureChart" style="width:100%; height:400px; border-width:1px; border-style:solid; border-color:black">
+    <div id="toolBar" style="margin-bottom: 5px; padding:5px; border-width:1px; border-color:black; border-style:solid">
+      <div style="float: left">Date:&nbsp;</div>
+      <div style="float: left" id="dateList">[Date List]</div>
+      <div style="float: left">&nbsp;Interpolation:&nbsp;</div>
+      <div style="float: left" id="presetList">[Preset List]</div>
+      <div style="float: left">&nbsp;Curve:&nbsp;</div>
+      <div style="float: left" id="curveTypeList">[Curve Type List]</div>
+      <div>&nbsp;</div>
+    </div>
+    <div id="termStructureChart" style="width:100%; height:300px; border-width:1px; border-style:solid; border-color:black">
       [Term Structure]
+    </div>
+    <div id="bumpResponseChart" style="margin-top: 5px; width:100%; height:250px; border-width:1px; border-style:solid; border-color:black">
+      [Bump Response]
     </div>
     <div id="debugOutput">[Debug]</div>
   </div>
