@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/jqwidgets/styles/jqx.base.css" type="text/css" />
   
   <script type="text/javascript" src="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/bspline.js"></script>
+  <script type="text/javascript" src="file:///e:/Dev/Repos/YieldCurve/YieldCurveDemo/instrument.js"></script>
   
   <script type="text/javascript">
 $(function () {
@@ -97,13 +98,15 @@ $(function () {
 		$("#presetList").on('select', function (e) {
 			if (e && e.args) {
 				var index = e.args.index;
-				drawTermStructure(splinePresets[index]);
+				drawYieldCurve(splinePresets[index]);
+				//drawTermStructure(splinePresets[index]);
 				drawBumpResponse(splinePresets[index]);
 				//drawBezierBasis(splinePresets[index]);
 			}
 		});
 
-		drawTermStructure(splinePresets[defaultPresetIndex]);
+		//drawYieldCurve(splinePresets[defaultPresetIndex]);
+		//drawTermStructure(splinePresets[defaultPresetIndex]);
 		drawBumpResponse(splinePresets[defaultPresetIndex]);
 		//drawBezierBasis(splinePresets[defaultPresetIndex]);
 	});
@@ -262,6 +265,52 @@ $(function () {
 			});
 		}
 		//adjustYAxisLimits(chart);
+		chart.render();
+	}
+	
+	function drawYieldCurve(preset) 
+	{
+		var dataPoints = defaultDataPoints;
+		var n = dataPoints.length;
+		var instruments = [];
+		var marketRates = [];
+		for (var i = 0; i < n; i++) {
+			// instruments[i] = new Swap(dataPoints[i].x);
+			instruments[i] = new Fra(dataPoints[i].x);
+			marketRates[i] = dataPoints[i].y / 100;
+		}
+
+		// Build the yield curve.
+		var discount = buildYieldCurve(instruments, marketRates, preset);
+		
+		// Plot it...
+		var chart = $("#termStructureChart").CanvasJSChart();
+		chart.options.data.length = 0; // clear existing series
+		
+		// Plot input data points.
+		if (true) {
+			chart.options.data.push({
+				type: 'scatter',
+				name: 'Term structure',
+				markerType: 'square',
+				showInLegend: true,
+				dataPoints: dataPoints
+			});
+		}
+		
+		// Plot interpolated curve.
+		if (true) {
+			var XY = bsplineInterp(dataPoints, preset.degree, preset.conditions);
+			chart.options.data.push({
+				type: 'line',
+				name: preset.name + ' Spline',
+				markerType: 'none',
+				showInLegend: true,
+				dataPoints: XY
+			});
+		}
+		
+		adjustYAxisLimits(chart);
 		chart.render();
 	}
 	

@@ -105,7 +105,9 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="bspline.js" />
     <Content Include="canvasjs-1.8.0-beta4-mod.js" />
+    <Content Include="instrument.js" />
     <Content Include="Spline.html" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
