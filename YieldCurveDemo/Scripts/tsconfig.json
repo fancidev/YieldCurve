@@ -1,0 +1,11 @@
+{
+	"compilerOptions": {
+		
+	},
+	"files": [
+		"BSpline.ts",
+		"instruments.ts",
+		"YieldCurveBuilder.ts",
+		"numericjs.d.ts"
+	]
+}
