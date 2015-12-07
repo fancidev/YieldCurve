@@ -14,11 +14,20 @@ type int = number;
 
 class BSpline {
 
+	/** 
+	 * Number of knots, not counting the multiplicity knots automatically
+	 * added at the beginning and at the end.
+	 */
+	private n: int;
+	
+	/** Spline degree: 1=linear, 2=quadratic, 3=cubic, etc */
+	private p: int;
+	
+	/** Knot vector, including automatically-added multiplicity knots */
+	private xs: number[];
+	
 	private C: number[][];
-	private p: int; // degree: 1=linear, 2=quadratic, 3=cubic, etc
-	private n: int; // number of points to interpolate
-	private x: number[];
-	private xx: number[];
+	
 	
 	/**
 	 * Creates a family of B-splines with the given knot locations
@@ -32,32 +41,31 @@ class BSpline {
 	 * @param degree      Degree of the spline; must be a positive integer.
 	 *                    For example, 1=linear, 2=quadratic, 3=cubic, etc.
 	 * @param conditions  Extra conditions to impose on the derivative of
-	 *             selected knot points. The number of conditions
-	 *             must be equal to (degree - 1). Each condition is
-	 *             a named tuple:
-	 *             {
-	 *               knotIndex:  zero-based knot index; if negative,
-	 *                           the index is counted backward
-	 *               derivOrder: order of derivative (1, 2, ...)
-	 *             }
+	 *                    selected knot points. The number of conditions
+	 *                    must be equal to (degree - 1). Each condition is
+	 *                    a named tuple:
+	 *                    knotIndex:  zero-based knot index; if negative,
+	 *                                the index is counted backward
+	 *                    derivOrder: order of derivative (1, 2, ...)
+	 *
 	 * @return A BSpline object that represents a family of b-splines.
 	 */
 	constructor(x: number[], degree: int, conditions: InterpDerivCondition[]) {
 
-		var n = x.length;
-		var p = degree;
+		const n = x.length;
+		const p = degree;
 		if (n < 2)
 			throw 'Must have at least 2 points.';
 		if (p < 1)
 			throw 'Degree must be at least 1.';
 		
 		// add multiplicity knots to begin and end
-		var xMin = x[0];
-		var xMax = x[x.length - 1];
-		var xx = x.slice();
-		for (var i = 0; i < p; i++) {
-			xx.splice(0, 0, xMin);
-			xx.push(xMax);
+		const xMin = x[0];
+		const xMax = x[x.length - 1];
+		let xs = x.slice();
+		for (let i = 0; i < p; i++) {
+			xs.splice(0, 0, xMin);
+			xs.push(xMax);
 		}
 		// Now:
 		// xx[0..p-1]   = multiplicity knots
@@ -76,7 +84,7 @@ class BSpline {
 		// values. The rest (p-1) equations correspond to the
 		// derivative conditions at selected knot points.
 		
-		var C: number[][] = []; // (n+p-1)-by-(n+p-1) square matrix
+		let C: number[][] = []; // (n+p-1)-by-(n+p-1) square matrix
 		
 		// First knot:
 		C[0] = numeric.rep([n + p - 1], 0);
@@ -87,22 +95,22 @@ class BSpline {
 		C[n - 1][n + p - 2] = 1.0;
 		
 		// Interior knots: 
-		for (var i = 1; i < n - 1; i++) {
+		for (let i = 1; i < n - 1; i++) {
 			// Each has exactly p non-zero bases.
 			C[i] = numeric.rep([n + p - 1], 0);
-			for (var j = 0; j < p; j++) {
-				C[i][i + j] = BSpline.N(i + j, p, xx, x[i]);
+			for (let j = 0; j < p; j++) {
+				C[i][i + j] = BSpline.N(i + j, p, xs, x[i]);
 			}
 		}
 		
 		// Additional conditions:
-		if (conditions.length != p - 1) {
+		if (conditions.length !== p - 1) {
 			throw 'Wrong number of conditions.';
 		}
-		for (var k = 0; k < p - 1; k++) {
-			var cond = conditions[k];
-			var knotIndex = cond['knotIndex'];
-			var derivOrder = cond['derivOrder'];
+		for (let k = 0; k < p - 1; k++) {
+			const cond = conditions[k];
+			let knotIndex = cond['knotIndex'];
+			const derivOrder = cond['derivOrder'];
 			if (knotIndex < 0) {
 				knotIndex += n;
 			}
@@ -117,9 +125,9 @@ class BSpline {
 			// derivatives; the interior knots each has 3
 			// non-zero derivatives. <- TBC
 			C[n + k] = numeric.rep([n + p - 1], 0);
-			var i = knotIndex;
-			for (var j = 0; j < p; j++) {
-				C[n + k][i + j] = BSpline.dN(i + j, p, xx, x[i], derivOrder);
+			const i = knotIndex;
+			for (let j = 0; j < p; j++) {
+				C[n + k][i + j] = BSpline.dN(i + j, p, xs, x[i], derivOrder);
 			}
 		}
 
@@ -139,8 +147,7 @@ class BSpline {
 		this.C = C;
 		this.p = p;
 		this.n = n;
-		this.x = x;
-		this.xx = xx;
+		this.xs = xs;
 	}
 	
 	/**
@@ -165,11 +172,11 @@ class BSpline {
 	 *        a spline's weight vector gives the spline's value at x.
 	 */
 	evaluate(x: number): number[] {
-		var n = this.n;
-		var p = this.p;
-		var c = [];
+		const n = this.n;
+		const p = this.p;
+		let c = [];
 		for (var i = 0; i < n + p - 1; i++) {
-			c[i] = BSpline.N(i, p, this.xx, x);
+			c[i] = BSpline.N(i, p, this.xs, x);
 		}
 		return c;
 	}
@@ -188,8 +195,8 @@ class BSpline {
 	 */
 	fit(y: number[]): (number) => number {
 
-		var n = this.n;
-		var p = this.p;
+		const n = this.n;
+		const p = this.p;
 
 		y = y.slice();
 		if (y.length < n)
@@ -197,16 +204,16 @@ class BSpline {
 		if (y.length > n + p - 1)
 			throw 'y must have at most ' + (n + p - 1) + ' elements.';
 		if (y.length < n + p - 1) {
-			for (var i = y.length; i < n + p - 1; i++)
+			for (let i = y.length; i < n + p - 1; i++)
 				y.push(0);
 		}
 
-		var C = this.C;
-		var w = numeric.solve(C, y);
-		var obj = this;
+		const C = this.C;
+		const w = numeric.solve(C, y);
+		const obj = this;
 
-		var f = function(x) {
-			var c = obj.evaluate(x);
+		const f = function(x) {
+			let c = obj.evaluate(x);
 			return numeric.dot(c, w);
 		};
 		//f.weights = w;
@@ -214,51 +221,63 @@ class BSpline {
 	}
 	
 	// Returns the i'th b-spline basis of this family.
-	basis(i: int, derivOrder: int = 0) {
+	basis(i: int, derivOrder: int = 0): (number) => number {
 
-		var n = this.n;
-		var p = this.p;
-		var xx = this.xx;
+		const n = this.n;
+		const p = this.p;
+		const xs = this.xs;
 
 		if (!(i >= 0 && i < n + p - 1))
 			throw 'Invalid basis number: ' + i;
 
 		return function(x) {
-			return BSpline.dN(i, p, xx, x, derivOrder);
+			return BSpline.dN(i, p, xs, x, derivOrder);
 		}
 	}
 
-	// Bezier basis function: N[i,n,a](u)
-	// See the book
-	private static N(i: int, n: int, a: number[], u: number): number {
-		if (n == 0) {
-			//var leftContinuous = false;
-			//if (leftContinuous)
-			//	return (u > a[i] && u <= a[i+1])? 1 : 0;
-			//else
-			//	return (u >= a[i] && u < a[i+1])? 1 : 0;
-			if (u >= a[i] && u < a[i + 1])
+	/**
+	 * Returns the d'th derivative of the i'th basis function of
+	 * a b-spline with given knots.
+	 * 
+	 * @param i  Zero-based index of the basis function to compute.
+	 * @param p  Degree of the spline.
+	 * @param xs Knot vector; must be non-decreasing.
+	 * @param x  The point to compute the value.
+	 * @param d  The order of derivative to return; default is 0, 
+	 *           which returns the value of the basis function.
+	 * 
+	 * @description 
+	 * For any p > 0, each basis function is continuous everywhere.
+	 * When p = 0, the basis function is assumed to be right-continuous
+	 * at knot points, except for the last non-empty interval, for
+	 * which the basis function is assumed to be left-continuous.
+	 */
+	private static N(i: int, p: int, xs: number[], x: number): number {
+		if (p == 0) {
+			if (xs[i] == xs[i + 1]) // multiplicity knot
+				return 0;
+			if (x >= xs[i] && x < xs[i + 1]) // left-continuous at knots
 				return 1;
-			if (u == a[i + 1] && a[i] < a[i + 1] && a[i + 1] == a[a.length - 1])
+			if (x == xs[i + 1] && x == xs[xs.length - 1]) // right-continuous at last knot
 				return 1;
 			return 0;
 		}
-		var alpha1 = (a[i + n] - a[i] == 0) ? 0 : (u - a[i]) / (a[i + n] - a[i]);
-		var alpha2 = (a[i + 1 + n] - a[i + 1] == 0) ? 0 : (u - a[i + 1]) / (a[i + 1 + n] - a[i + 1]);
-		return alpha1 * BSpline.N(i, n - 1, a, u) + (1 - alpha2) * BSpline.N(i + 1, n - 1, a, u);
+		var w1 = (xs[i + p] == xs[i]) ? 0 : (x - xs[i]) / (xs[i + p] - xs[i]);
+		var w2 = (xs[i + 1 + p] == xs[i + 1]) ? 0 : (x - xs[i + 1]) / (xs[i + 1 + p] - xs[i + 1]);
+		return w1 * BSpline.N(i, p - 1, xs, x) + (1 - w2) * BSpline.N(i + 1, p - 1, xs, x);
 	}
 	
 	// Derivative of B-spline basis Bezier basis function: N[i,n,a](u)
 	// See the book
-	private static dN(i: int, n: int, a: number[], u: number, d: int = 0): number {
+	private static dN(i: int, p: int, xs: number[], x: number, d: int = 0): number {
 		if (d == 0) {
-			return BSpline.N(i, n, a, u);
+			return BSpline.N(i, p, xs, x);
 		}
-		if (n == 0) {
+		if (p == 0) {
 			return NaN;
 		}
-		var v1 = (a[i + n] - a[i] == 0) ? 1 : (a[i + n] - a[i]);
-		var v2 = (a[i + n + 1] - a[i + 1] == 0) ? 1 : (a[i + n + 1] - a[i + 1]);
-		return n / v1 * BSpline.dN(i, n - 1, a, u, d - 1) - n / v2 * BSpline.dN(i + 1, n - 1, a, u, d - 1);
+		var v1 = (xs[i + p] - xs[i] == 0) ? 1 : (xs[i + p] - xs[i]);
+		var v2 = (xs[i + p + 1] - xs[i + 1] == 0) ? 1 : (xs[i + p + 1] - xs[i + 1]);
+		return p / v1 * BSpline.dN(i, p - 1, xs, x, d - 1) - p / v2 * BSpline.dN(i + 1, p - 1, xs, x, d - 1);
 	}
 }

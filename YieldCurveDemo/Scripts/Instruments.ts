@@ -3,7 +3,14 @@
 'use strict';
 
 interface Discount {
-	(t: number, deriv?: number[]): number;
+	/**
+	 * Returns the discount factor for a given time-to-maturity.
+	 * @param t         Time-to-maturity, expressed in years.
+	 * @param gradient  If supplied, returns the gradient vector of df with
+	 *                  respect to an internal vector of state variables.
+	 * @returns Discount factor.  
+	 */
+	(t: number, gradient?: number[]): number;
 }
 
 interface Instrument {
@@ -15,9 +22,9 @@ interface Instrument {
 	/**
 	 * Computes implied swap rate off the given yield curve.
 	 * 
-	 * @param discount   A function of the following signature:
+	 * @param {Discount} discount   A function of the following signature:
 	 *                   discount(maturity, out deriv) => value
-	 * @param gradient   (output) receives derivative
+	 * @param {number[]} gradient   (output) receives derivative
 	 */
 	impliedRate(discount: Discount, gradient?: number[]): number;
 }
