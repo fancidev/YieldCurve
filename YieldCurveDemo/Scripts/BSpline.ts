@@ -20,38 +20,29 @@ class BSpline {
 	private x: number[];
 	private xx: number[];
 	
-	// Creates a family of B-splines that interpolate the given
-	// points and satisfy the given derivative conditions.
-	//
-	// PARAMETERS
-	// 
-	//   x         X-coordinates of the points being interpolated.
-	//
-	//   degree    Degree of the spline, must be a positive integer.
-	//             1 - linear
-	//             2 - quadratic spline
-	//             3 - cubic spline
-	//             etc.
-	// 
-	//   cond      Extra conditions to impose on the derivative of
-	//             selected knot points. The number of conditions
-	//             must be equal to (degree - 1). Each condition is
-	//             a named tuple:
-	//             {
-	//               knotIndex:  zero-based knot index; if negative,
-	//                           the index is counted backward
-	//               derivOrder: order of derivative (1, 2, ...)
-	//             }
-	//
-	// RETURN VALUE
-	//
-	//   A BSpline object that represents a family of b-splines.
-	//
-
+	/**
+	 * Creates a family of B-splines with the given knot locations
+	 * and constraint structures. Each constraint is imposed either
+	 * on the spline's value or on its derivative at given locations.
+	 * The family contains all splines by varying the constraint
+	 * values.
+	 * 
+	 * @param x           X-coordinates of the knot points. Must have at
+	 *                    least two elements.
+	 * @param degree      Degree of the spline; must be a positive integer.
+	 *                    For example, 1=linear, 2=quadratic, 3=cubic, etc.
+	 * @param conditions  Extra conditions to impose on the derivative of
+	 *             selected knot points. The number of conditions
+	 *             must be equal to (degree - 1). Each condition is
+	 *             a named tuple:
+	 *             {
+	 *               knotIndex:  zero-based knot index; if negative,
+	 *                           the index is counted backward
+	 *               derivOrder: order of derivative (1, 2, ...)
+	 *             }
+	 * @return A BSpline object that represents a family of b-splines.
+	 */
 	constructor(x: number[], degree: int, conditions: InterpDerivCondition[]) {
-
-		var N = BSpline.N;
-		var dN = BSpline.dN;
 
 		var n = x.length;
 		var p = degree;
@@ -100,7 +91,7 @@ class BSpline {
 			// Each has exactly p non-zero bases.
 			C[i] = numeric.rep([n + p - 1], 0);
 			for (var j = 0; j < p; j++) {
-				C[i][i + j] = N(i + j, p, xx, x[i]);
+				C[i][i + j] = BSpline.N(i + j, p, xx, x[i]);
 			}
 		}
 		
@@ -128,7 +119,7 @@ class BSpline {
 			C[n + k] = numeric.rep([n + p - 1], 0);
 			var i = knotIndex;
 			for (var j = 0; j < p; j++) {
-				C[n + k][i + j] = dN(i + j, p, xx, x[i], derivOrder);
+				C[n + k][i + j] = BSpline.dN(i + j, p, xx, x[i], derivOrder);
 			}
 		}
 
@@ -152,52 +143,49 @@ class BSpline {
 		this.xx = xx;
 	}
 	
-	// Gets the coefficient matrix, C, of the b-spline family.
-	// 
-	// RETURN VALUE
-	// 
-	//   A (n+p-1)-by-(n+p-1) square matrix C such that C*w = b
-	//   uniquely determines a spline of this family, where
-	//     w = weights of the bspline bases
-	//     n = number of interpolated points
-	//     p = degree of the spline
-	//     b = (n+p-1)-by-1 vector of `realization' constraints
-	//
+	/**
+	 * Gets the coefficient matrix, C, of the b-spline family.
+	 * 
+	 * @return A (n+p-1)-by-(n+p-1) square matrix C such that C*w = b
+	 *         uniquely determines a spline of this family, where
+	 *           w = weights of the b-spline bases
+	 *           n = number of interpolated points
+	 *           p = degree of the spline
+	 *           b = (n+p-1)-by-1 vector of constraint values
+	 */
 	coefficients(): number[][] {
 		return this.C;
 	}
 	
-	// Gets the value of the spline family at a given X-coordinate.
-	//
-	// RETURN VALUE
-	//
-	//   A (n+p-1)-element vector, c, whose inner product with
-	//   a spline's weight vector gives the spline's value at x.
+	/**
+	 * Gets the constraint-dependent value of the spline family at a
+	 * given X-coordinate.
+	 *
+	 * @return A (n+p-1)-element vector, c, whose inner product with
+	 *        a spline's weight vector gives the spline's value at x.
+	 */
 	evaluate(x: number): number[] {
 		var n = this.n;
 		var p = this.p;
-		var c = []; // zeroVector(n + p - 1);
+		var c = [];
 		for (var i = 0; i < n + p - 1; i++) {
 			c[i] = BSpline.N(i, p, this.xx, x);
 		}
 		return c;
 	}
 	
-	// Creates an instance of the b-spline family by fitting to the
-	// given y values and derivative values.
-	//
-	// PARAMETERS
-	//
-	//   y    The first n constraints are interpreted as values at
-	//        knot points; the rest (p-1) constraints are interpreted
-	//        as the derivative values at supplied knots. Any
-	//        unspecified derivative constraint is supposed to be 0.
-	//
-	// RETURN VALUE
-	//
-	//   A univariate function, f, such that y=f(x) evaluates to 
-	//   the spline value at x.
-	//
+	/**
+	 * Creates an instance of the b-spline family by fitting to a
+	 * particular set of constraint values.
+	 * 
+	 * @param y  The first n constraints are interpreted as values at
+	 *           knot points; the rest (p-1) constraints are interpreted
+	 *           as the derivative values at supplied knots. Any
+	 *           unspecified derivative constraint is supposed to be 0.
+	 *
+	 * @return   A univariate function, f, such that y=f(x) evaluates to 
+	 *           the spline's value at x.
+	 */
 	fit(y: number[]): (number) => number {
 
 		var n = this.n;
@@ -226,7 +214,7 @@ class BSpline {
 	}
 	
 	// Returns the i'th b-spline basis of this family.
-	basis(i: int, derivOrder: int) {
+	basis(i: int, derivOrder: int = 0) {
 
 		var n = this.n;
 		var p = this.p;
@@ -234,8 +222,6 @@ class BSpline {
 
 		if (!(i >= 0 && i < n + p - 1))
 			throw 'Invalid basis number: ' + i;
-		if (typeof (derivOrder) === 'undefined')
-			derivOrder = 0;
 
 		return function(x) {
 			return BSpline.dN(i, p, xx, x, derivOrder);
@@ -264,7 +250,7 @@ class BSpline {
 	
 	// Derivative of B-spline basis Bezier basis function: N[i,n,a](u)
 	// See the book
-	private static dN(i: int, n: int, a: number[], u: number, d: number): number {
+	private static dN(i: int, n: int, a: number[], u: number, d: int = 0): number {
 		if (d == 0) {
 			return BSpline.N(i, n, a, u);
 		}
