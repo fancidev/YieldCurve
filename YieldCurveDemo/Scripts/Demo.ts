@@ -68,9 +68,8 @@ namespace Demo {
 
 	type NamedInterpScheme = InterpScheme & { name: string };
 
-	export function drawYieldCurve(preset: NamedInterpScheme, createPlotInstrument = createSwap) {
+	export function drawYieldCurve(dataPoints: DataPoint[], preset: NamedInterpScheme, createPlotInstrument = createSwap) {
 
-		const dataPoints = defaultDataPoints;
 		const n = dataPoints.length;
 		const Instrument = Swap; // Fra;
 		const instruments: Instrument[] = [];

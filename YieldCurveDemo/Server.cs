@@ -7,6 +7,7 @@ using System.Security.Permissions;
 using System.Web.Script.Serialization;
 using System.Data;
 using System.Runtime.InteropServices;
+using System.IO;
 
 namespace YieldCurveDemo
 {
@@ -60,6 +61,7 @@ namespace YieldCurveDemo
         private static object[][] GetData()
         {
             DataTable table = TimeSeries.GetPanelData(TimeSeries.LoadHistoricalData());
+            WriteToFile(table, @"E:\test-json.txt");
 
             List<object[]> rows = new List<object[]>();
 
@@ -87,6 +89,50 @@ namespace YieldCurveDemo
                     rows.Add(row);
             }
             return rows.ToArray();
+        }
+
+        private static void WriteToFile(DataTable table, string fileName)
+        {
+            using (StreamWriter writer = new StreamWriter(fileName))
+            {
+                int n = table.Columns.Count;
+
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < n; i++)
+                {
+                    if (i == 0)
+                        sb.Append("[");
+                    else
+                        sb.Append(",");
+                    sb.Append("\"" + table.Columns[i].ColumnName + "\"");
+                }
+                sb.Append("],");
+                writer.WriteLine(sb.ToString());
+                sb.Clear();
+
+                foreach (DataRow row in table.Rows)
+                {
+                    object[] rowData = row.ItemArray;
+                    bool isValid = true;
+                    for (int j = 1; j < n; j++)
+                    {
+                        if (!(rowData[j] is double && !double.IsNaN((double)rowData[j])))
+                            isValid = false;
+                    }
+                    if (!isValid)
+                        continue;
+
+                    DateTime dt = (DateTime)rowData[0];
+                    sb.AppendFormat("[new Date({0},{1},{2})", dt.Year, dt.Month - 1, dt.Day);
+                    for (int j = 1; j < n; j++)
+                    {
+                        sb.AppendFormat(",{0}", rowData[j]);
+                    }
+                    sb.Append("],");
+                    writer.WriteLine(sb.ToString());
+                    sb.Clear();
+                }
+            }
         }
     }
 }

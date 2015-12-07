@@ -17,7 +17,7 @@ namespace YieldCurveDemo
         {
             List<TimeSeries> panelData = new List<TimeSeries>();
             string directoryName = @"../../../Data/USDIRS";
-            string[] terms = { "1Y", "2Y", "3Y", "4Y", "5Y", "7Y", "10Y", "30Y" };
+            string[] terms = { "3M", "1Y", "2Y", "3Y", "4Y", "5Y", "7Y", "10Y", "30Y" };
             foreach (string term in terms)
             {
                 string fileName = Path.Combine(directoryName, term + ".csv");
