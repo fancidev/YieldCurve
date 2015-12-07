@@ -1,240 +1,212 @@
 'use strict';
 
-interface InterpDerivCondition {
-	knotIndex: number;
-	derivOrder: number;
-}
-
-interface InterpSettings {
-	degree: number;
-	conditions?: InterpDerivCondition[];
-}
-
 type int = number;
 
+interface BSplineConstraint {
+	x: number;
+	y: number;
+	order?: int;
+}
+
+/**
+ * Represents a family of B-splines of given knot vector and degree.
+ * Each spline in this family is a linear combinations of (the same
+ * set of) basis functions, and is therefore uniquely determined by
+ * the weights of the linear combination.
+ * 
+ * Such a family of B-splines also has the property that the value
+ * or derivative at any given X-coordinate is a linear combination
+ * of the weight vector. 
+ */
 class BSpline {
 
-	/** 
-	 * Number of knots, not counting the multiplicity knots automatically
-	 * added at the beginning and at the end.
-	 */
-	private n: int;
-	
+	/** Knot vector; nondecreasing and contains at least two elements */
+	private xs: number[];
+		
 	/** Spline degree: 1=linear, 2=quadratic, 3=cubic, etc */
 	private p: int;
 	
-	/** Knot vector, including automatically-added multiplicity knots */
-	private xs: number[];
-	
-	private C: number[][];
-	
-	
 	/**
-	 * Creates a family of B-splines with the given knot locations
-	 * and constraint structures. Each constraint is imposed either
-	 * on the spline's value or on its derivative at given locations.
-	 * The family contains all splines by varying the constraint
-	 * values.
+	 * Creates a family of B-splines of the given knot vector and degree.
 	 * 
-	 * @param x           X-coordinates of the knot points. Must have at
-	 *                    least two elements.
-	 * @param degree      Degree of the spline; must be a positive integer.
-	 *                    For example, 1=linear, 2=quadratic, 3=cubic, etc.
-	 * @param conditions  Extra conditions to impose on the derivative of
-	 *                    selected knot points. The number of conditions
-	 *                    must be equal to (degree - 1). Each condition is
-	 *                    a named tuple:
-	 *                    knotIndex:  zero-based knot index; if negative,
-	 *                                the index is counted backward
-	 *                    derivOrder: order of derivative (1, 2, ...)
-	 *
-	 * @return A BSpline object that represents a family of b-splines.
+	 * @param xs      Knot vector; must contain at least two elements.
+	 *                A copy of this vector is made and stored in the
+	 *                object.
+	 * @param degree  Degree of the spline; must be a positive integer.
+	 *                For example, 1=linear, 2=quadratic, 3=cubic, etc.
+	 * @param addMultiKnots  If true, automatically add 'degree' number
+	 *                       of multiplicity knots to the beginning and
+	 *                       end of the given knots.
+	 * 
+	 * @return A BSpline object that represents a family of B-splines.
 	 */
-	constructor(x: number[], degree: int, conditions: InterpDerivCondition[]) {
+	constructor(xs: number[], degree: int, addMultiKnots = false) {
 
-		const n = x.length;
+		if (xs.length < 2) {
+			throw 'Knot vector must contain at least 2 elements.';
+		}
+		xs = xs.slice().sort((a, b) => (a - b));
+
 		const p = degree;
-		if (n < 2)
-			throw 'Must have at least 2 points.';
-		if (p < 1)
-			throw 'Degree must be at least 1.';
-		
-		// add multiplicity knots to begin and end
-		const xMin = x[0];
-		const xMax = x[x.length - 1];
-		let xs = x.slice();
-		for (let i = 0; i < p; i++) {
-			xs.splice(0, 0, xMin);
-			xs.push(xMax);
-		}
-		// Now:
-		// xx[0..p-1]   = multiplicity knots
-		// xx[p..p+n-1] = user-supplied real knots
-		// xx[p+n..p+n+p-1] = multiplicity knots
-		
-		// Compute the values of b-spline bases at user-supplied
-		// knot points. There are (n+p-1) bases. The first basis
-		// is always = 1 at the first point. The last basis is
-		// always = 1 at the last point.
-		
-		// A vector of (n+p-1) `weights', w[0..(n-1)+(p-1)],
-		// are multiplied to the bspline bases. We need (n+p-1)
-		// equations to solve these weights. The first n
-		// equations correspond to the user supplied knot
-		// values. The rest (p-1) equations correspond to the
-		// derivative conditions at selected knot points.
-		
-		let C: number[][] = []; // (n+p-1)-by-(n+p-1) square matrix
-		
-		// First knot:
-		C[0] = numeric.rep([n + p - 1], 0);
-		C[0][0] = 1.0;
-		
-		// Last knot:
-		C[n - 1] = numeric.rep([n + p - 1], 0);
-		C[n - 1][n + p - 2] = 1.0;
-		
-		// Interior knots: 
-		for (let i = 1; i < n - 1; i++) {
-			// Each has exactly p non-zero bases.
-			C[i] = numeric.rep([n + p - 1], 0);
-			for (let j = 0; j < p; j++) {
-				C[i][i + j] = BSpline.N(i + j, p, xs, x[i]);
-			}
-		}
-		
-		// Additional conditions:
-		if (conditions.length !== p - 1) {
-			throw 'Wrong number of conditions.';
-		}
-		for (let k = 0; k < p - 1; k++) {
-			const cond = conditions[k];
-			let knotIndex = cond['knotIndex'];
-			const derivOrder = cond['derivOrder'];
-			if (knotIndex < 0) {
-				knotIndex += n;
-			}
-			if (!(knotIndex >= 0 && knotIndex < n)) {
-				throw 'Invalid knot index: ' + knotIndex;
-			}
-			if (!(derivOrder >= 1 && derivOrder < p)) {
-				throw 'Invalid order of derivative: ' + derivOrder;
-			}
-			
-			// The first knot and last knot has 2 non-zero
-			// derivatives; the interior knots each has 3
-			// non-zero derivatives. <- TBC
-			C[n + k] = numeric.rep([n + p - 1], 0);
-			const i = knotIndex;
-			for (let j = 0; j < p; j++) {
-				C[n + k][i + j] = BSpline.dN(i + j, p, xs, x[i], derivOrder);
-			}
+		if (p < 1) {
+			throw 'Spline degree must be at least 1.';
 		}
 
-		// Debug output.
-		//if (false) {
-		//	var invC = numeric.inv(C);
-		//	$('#debugOutput').html(
-		//		'<pre>' + numeric.prettyPrint(C) + '</pre>' +
-		//		'<pre>Inverse</pre>' +
-		//		'<pre>' + numeric.prettyPrint(invC) + '</pre>');
-		//}
-		
-		// The matrix C is what we store internally. Each
-		// `specialization' of the spline is found by solving
-		// the weights w such that C*w = b where b is a vector
-		// of user-supplied knot values and boundary conditions.
-		this.C = C;
-		this.p = p;
-		this.n = n;
+		if (addMultiKnots) {
+			for (let i = 0; i < p; i++) {
+				xs.splice(0, 0, xs[0]);
+				xs.push(xs[xs.length - 1]);
+			}
+		}
+		if (p > xs.length - 1) {
+			throw 'Spline degree must be no greater than number of points - 1';
+		}
+
 		this.xs = xs;
+		this.p = p;
 	}
 	
 	/**
-	 * Gets the coefficient matrix, C, of the b-spline family.
+	 * Returns the knot vector of the B-spline family.
+	 */
+	knots(): number[] {
+		return this.xs;
+	}
+	
+	/**
+	 * Returns the degree of the B-spline family.
+	 */
+	degree(): int {
+		return this.p;
+	}
+	
+	/**
+	 * Returns the number of spline basis functions. This is equal
+	 * to the number of knots minus 1 minus the degree of the spline.
+	 */
+	basisCount(): int {
+		return this.xs.length - 1 - this.degree();
+	}
+	
+	/**
+	 * Gets the i'th spline basis function or its derivative.
 	 * 
-	 * @return A (n+p-1)-by-(n+p-1) square matrix C such that C*w = b
-	 *         uniquely determines a spline of this family, where
-	 *           w = weights of the b-spline bases
-	 *           n = number of interpolated points
-	 *           p = degree of the spline
-	 *           b = (n+p-1)-by-1 vector of constraint values
+	 * @param i      Zero-based index of the spline basis.
+	 * @param order  Order of derivative; default is 0 for value.
+	 * 
+	 * @returns  A univariate function.
 	 */
-	coefficients(): number[][] {
-		return this.C;
+	basis(i: int, order: int = 0): (x: number) => number {
+		const xs = this.knots();
+		const p = this.degree();
+		const m = this.basisCount();
+
+		if (!(i >= 0 && i < m))
+			throw `Invalid basis index: ${i}`;
+		if (!(order >= 0 && order <= p))
+			throw 'Invalid derivative order';
+
+		return function(x: number) {
+			return BSpline.dN(i, p, xs, x, order);
+		}
 	}
 	
 	/**
-	 * Gets the constraint-dependent value of the spline family at a
-	 * given X-coordinate.
+	 * Gets the constraint-dependent value or derivative of the spline
+	 * at a given X-coordinate.
 	 *
-	 * @return A (n+p-1)-element vector, c, whose inner product with
-	 *        a spline's weight vector gives the spline's value at x.
+	 * @param x      X-coordinate at which to evaluate the spline function
+	 *               or its derivative.
+	 * @param order  Order of the derivative; default is 0 for value.
+	 * 
+	 * @returns  A (n-p-1)-element vector, c, whose inner product with
+	 *           a spline's weight vector gives the spline's value or
+	 *           derivative at x.
 	 */
-	evaluate(x: number): number[] {
-		const n = this.n;
+	evaluate(x: number, order: int = 0): number[] {
+		const xs = this.xs;
+		const n = this.xs.length;
 		const p = this.p;
-		let c = [];
-		for (var i = 0; i < n + p - 1; i++) {
-			c[i] = BSpline.N(i, p, this.xs, x);
+		const m = n - 1 - p;
+
+		if (!(x >= xs[0] && x <= xs[m])) {
+			throw 'x is outside the range covered by this spline.';
+		}
+		if (!(order >= 0 && order <= p)) {
+			throw 'order must be between 0 and ' + p;
+		}
+
+		// TODO: Optimize this loop by not computing elements that
+		// are definitely zero.
+		let c = numeric.rep([m], 0);
+		for (let i = 0; i < m; i++) {
+			c[i] = BSpline.dN(i, p, this.xs, x, order);
 		}
 		return c;
 	}
 	
 	/**
-	 * Creates an instance of the b-spline family by fitting to a
-	 * particular set of constraint values.
+	 * Creates a specific instance of the b-spline family by applying
+	 * the given weights to its spline bases.
 	 * 
-	 * @param y  The first n constraints are interpreted as values at
-	 *           knot points; the rest (p-1) constraints are interpreted
-	 *           as the derivative values at supplied knots. Any
-	 *           unspecified derivative constraint is supposed to be 0.
-	 *
+	 * @param weights  A vector of weights to apply to the spline bases.
+	 *                 The vector must contain exactly (n - 1 - p)
+	 *                 elements, where n is the number of knots and 
+	 *                 p is the spline's degree. The weights are copied
+	 *                 by value.
+	 * @param order    If ommitted or zero, returns the spline function;
+	 *                 otherwise, returns the order'th derivative of
+	 *                 the spline function.
+	 * 
 	 * @return   A univariate function, f, such that y=f(x) evaluates to 
 	 *           the spline's value at x.
 	 */
-	fit(y: number[]): (number) => number {
-
-		const n = this.n;
-		const p = this.p;
-
-		y = y.slice();
-		if (y.length < n)
-			throw 'y must have at least ' + n + ' elements.';
-		if (y.length > n + p - 1)
-			throw 'y must have at most ' + (n + p - 1) + ' elements.';
-		if (y.length < n + p - 1) {
-			for (let i = y.length; i < n + p - 1; i++)
-				y.push(0);
+	apply(weights: number[], order = 0): (x: number) => number {
+		const m = this.basisCount();
+		if (weights.length != m) {
+			throw 'Weights must contain exactly ' + m + ' elements';
 		}
-
-		const C = this.C;
-		const w = numeric.solve(C, y);
-		const obj = this;
-
-		const f = function(x) {
-			let c = obj.evaluate(x);
+		const w = weights.slice();
+		const self = this;
+		const f = function(x: number) {
+			let c = self.evaluate(x, order);
 			return numeric.dot(c, w);
 		};
-		//f.weights = w;
 		return f;
 	}
 	
-	// Returns the i'th b-spline basis of this family.
-	basis(i: int, derivOrder: int = 0): (number) => number {
+	/**
+	 * Creates a specific instance of the b-spline family by fitting
+	 * to a set of constraints. This is an example that shows how to
+	 * use the BSpline class. 
+	 * 
+	 * @param constraints  A set of constraints on the spline's value
+	 *                     or derivative at given X-coordinates. The
+	 *                     number of constraints must be equal to the
+	 *                     number of basis functions.
+	 *
+	 * @return   A univariate function, f, such that f(x) gives the 
+	 *           spline's value at x.
+	 */
+	fit(constraints: BSplineConstraint[]): (x: number) => number {
 
-		const n = this.n;
-		const p = this.p;
-		const xs = this.xs;
-
-		if (!(i >= 0 && i < n + p - 1))
-			throw 'Invalid basis number: ' + i;
-
-		return function(x) {
-			return BSpline.dN(i, p, xs, x, derivOrder);
+		const m = this.basisCount();
+		if (constraints.length !== m) {
+			throw 'The number of constraints must be equal to ' + m;
 		}
-	}
 
+		let C: number[][] = []; // m-by-m square matrix
+		let b: number[] = [];
+		for (let k = 0; k < m; k++) {
+			const {x, y, order = 0} = constraints[k];
+			C[k] = this.evaluate(x, order);
+			b[k] = y;
+		}
+
+		const w = numeric.solve(C, b);
+		return this.apply(w);
+	}
+	
 	/**
 	 * Returns the d'th derivative of the i'th basis function of
 	 * a b-spline with given knots.

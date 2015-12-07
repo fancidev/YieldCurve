@@ -1,6 +1,6 @@
 {
 	"compilerOptions": {
-		
+		"noImplicitAny": true
 	},
 	"files": [
 		"BSpline.ts",

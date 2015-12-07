@@ -120,17 +120,17 @@ $(function () {
 		var chart = $("#bumpResponseChart").CanvasJSChart();
 		chart.options.data.length = 0; // clear existing series
 
-		var x = defaultDataPoints.map(function(p){return p.x;});
-		var xMin = x[0];
-		var xMax = x[x.length-1];
-		var spline = new BSpline(x, preset.degree, preset.conditions);
+		var xs = defaultDataPoints.map(function(p){return p.x;});
+		var xMin = xs[0];
+		var xMax = xs[xs.length-1];
+		var spline = new BSpline(xs, preset.degree, true);
 
-		var n = x.length;
+		var n = xs.length;
 		var p = preset.degree;
 		
-		for (var i = 0; i < n + p - 1; i++)
+		for (var i = 0; i < spline.basisCount(); i++)
 		{
-			var g = spline.basis(i,0);
+			var g = spline.basis(i, 0);
 			var dataPoints = [];
 			var xx = [];
 			var yy = [];
