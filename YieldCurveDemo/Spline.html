@@ -20,6 +20,7 @@
   <script type="text/javascript" src="Scripts/BSpline.js"></script>
   <script type="text/javascript" src="Scripts/YieldCurveBuilder.js"></script>
   <script type="text/javascript" src="Scripts/Instruments.js"></script>
+  <script type="text/javascript" src="Scripts/Demo.js"></script>
   
   <script type="text/javascript">
 $(function () {
@@ -101,53 +102,17 @@ $(function () {
 		$("#presetList").on('select', function (e) {
 			if (e && e.args) {
 				var index = e.args.index;
-				drawYieldCurve(splinePresets[index]);
-				//drawTermStructure(splinePresets[index]);
-				drawBumpResponse(splinePresets[index]);
+				Demo.drawYieldCurve(splinePresets[index]);
+				Demo.drawBumpResponse(splinePresets[index]);
+				
 				//drawBezierBasis(splinePresets[index]);
 			}
 		});
 
 		//drawYieldCurve(splinePresets[defaultPresetIndex]);
-		//drawTermStructure(splinePresets[defaultPresetIndex]);
 		//drawBumpResponse(splinePresets[defaultPresetIndex]);
-		drawBezierBasis(splinePresets[defaultPresetIndex]);
+		Demo.drawBezierBasis(splinePresets[defaultPresetIndex]);
 	});
-	
-	// Plot each row in the table as a series.
-	function drawBezierBasis(preset) 
-	{
-		var chart = $("#bumpResponseChart").CanvasJSChart();
-		chart.options.data.length = 0; // clear existing series
-
-		var xs = defaultDataPoints.map(function(p){return p.x;});
-		var xMin = xs[0];
-		var xMax = xs[xs.length-1];
-		var spline = new BSpline(xs, preset.degree, true);
-
-		var n = xs.length;
-		var p = preset.degree;
-		
-		for (var i = 0; i < spline.basisCount(); i++)
-		{
-			var g = spline.basis(i, 0);
-			var dataPoints = [];
-			var xx = [];
-			var yy = [];
-			for (var t = xMin; t <= xMax; t+=1/32) {
-				dataPoints.push({ x: t, y: g(t) });
-			}
-			chart.options.data.push({
-				type: 'line',
-				name: 'Basis_' + i,
-				markerType: 'square',
-				showInLegend: true,
-				dataPoints: dataPoints
-			});
-		}
-		chart.options.toolTip.shared = true;
-		chart.render();
-	}
 	
 	var splinePresets = [
 	{
@@ -200,220 +165,7 @@ $(function () {
 		{ x: 7, y: 5.23 },
 		{ x: 10, y: 5.29 },
 		{ x: 30, y: 5.41 }
-	];
-		
-	// Plot each row in the table as a series.
-	function drawTermStructure(preset) 
-	{
-		var dataPoints = defaultDataPoints;
-		
-		var chart = $("#termStructureChart").CanvasJSChart();
-		chart.options.data.length = 0; // clear existing series
-		
-		// Plot input data points.
-		if (true) {
-			chart.options.data.push({
-				type: 'scatter',
-				name: 'Term structure',
-				markerType: 'square',
-				showInLegend: true,
-				dataPoints: dataPoints
-			});
-		}
-		
-		// Plot interpolated curve.
-		if (true) {
-			var XY = bsplineInterp(dataPoints, preset.degree, preset.conditions);
-			chart.options.data.push({
-				type: 'line',
-				name: preset.name + ' Spline',
-				markerType: 'none',
-				showInLegend: true,
-				dataPoints: XY
-			});
-		}
-		
-		adjustYAxisLimits(chart);
-		chart.render();
-	}
-	
-	function drawBumpResponse(preset)
-	{
-		var dataPoints = defaultDataPoints;		
-		var chart = $("#bumpResponseChart").CanvasJSChart();
-		chart.options.data.length = 0;
-		var XY = bsplineInterp(dataPoints, preset.degree, preset.conditions);
-		
-		// bump each point
-		for (var i = 0; i < dataPoints.length; i++) {
-			var bumpedDataPoints = dataPoints.slice();
-			bumpedDataPoints[i] = {
-				x: bumpedDataPoints[i].x,
-				y: bumpedDataPoints[i].y + 0.01
-			};
-			var bumpedXY = bsplineInterp(bumpedDataPoints, preset.degree, preset.conditions);
-			var diff = [];
-			for (var j = 0; j < XY.length; j++) {
-				diff[j] = {
-					x: XY[j].x,
-					y: (bumpedXY[j].y - XY[j].y) * 100
-				};
-			}
-			chart.options.data.push({
-				type: 'line',
-				name: dataPoints[i].x + 'Y',
-				markerType: 'none',
-				showInLegend: true,
-				dataPoints: diff
-			});
-		}
-		//adjustYAxisLimits(chart);
-		chart.render();
-	}
-	
-	function drawYieldCurve(preset) 
-	{
-		var dataPoints = defaultDataPoints;
-		var n = dataPoints.length;
-		var Instrument = Swap; // Fra;
-		var instruments = [];
-		var marketRates = [];
-		for (var i = 0; i < n; i++) {
-			instruments[i] = new Instrument(dataPoints[i].x);
-			marketRates[i] = dataPoints[i].y / 100;
-		}
-
-		// Build the yield curve.
-		var discount = buildYieldCurve(instruments, marketRates, preset);
-		
-		// Plot it...
-		var chart = $("#termStructureChart").CanvasJSChart();
-		chart.options.data.length = 0; // clear existing series
-		
-		// Plot input data points.
-		if (true) {
-			chart.options.data.push({
-				type: 'scatter',
-				name: 'Term structure',
-				markerType: 'square',
-				showInLegend: true,
-				dataPoints: dataPoints
-			});
-		}
-		
-		// Plot interpolated curve.
-		var PlotInstrument = Swap; // InstFwd; // LogDf; // Swap; // LogDf;
-		var interpolatedPoints = [];
-		for (var t = dataPoints[0].x; t <= dataPoints[n-1].x; t += 1/16) {
-			var instrument = new PlotInstrument(t);
-			var impliedRate = instrument.impliedRate(discount);
-			interpolatedPoints.push({x: t, y: impliedRate*100});
-			//var XY = bsplineInterp(dataPoints, preset.degree, preset.conditions);
-		}
-		chart.options.data.push({
-			type: 'line',
-			name: '(' + preset.name + ' Spline)',
-			markerType: 'none',
-			showInLegend: true,
-			dataPoints: interpolatedPoints
-		});
-		//alert('Plotted');
-		
-		adjustYAxisLimits(chart);
-		chart.render();
-	}
-	
-	function adjustYAxisLimits(chart)
-	{
-		var minY = Infinity;
-		var maxY = -Infinity;
-		var data = chart.options.data;
-		for (var i = 0; i < data.length; i++) {
-			var dataPoints = data[i].dataPoints;
-			for (var j = 0; j < dataPoints.length; j++) {
-				var value = dataPoints[j].y;
-				minY = Math.min(minY, value);
-				maxY = Math.max(maxY, value);
-			}
-		}
-		
-		// Adjust the Y-axis range to half-percent with 5bp margin.
-		var margin = 0.05;
-		var roundTo = 0.50;
-		minY = Math.floor((minY - margin) / roundTo) * roundTo;
-		maxY = Math.ceil((maxY + margin) / roundTo) * roundTo;
-		chart.options.axisY.minimum = minY;
-		chart.options.axisY.maximum = maxY;
-		
-		// Note: the caller must call chart.render() to take effect.
-		// chart.render();
-	}
-	
-	function bsplineInterp(points, degree, conditions)
-	{
-		var x = points.map(function(pt){return pt.x});
-		var spline = new BSpline(x, degree, conditions);
-		
-		var y = points.map(function(pt){return pt.y});
-		var yy = y.concat(conditions.map(function(c){return c.derivValue;}));
-		var f = spline.fit(yy);
-		
-		var xMin = x[0];
-		var xMax = x[x.length-1];
-		var gridX = numeric.linspace(xMin, xMax, 200);
-		var gridXY = [];
-		for (var i = 0; i < gridX.length; i++) {
-			var x = gridX[i];
-			var y = f(x);
-			gridXY.push({x: x, y: y});
-		}
-		return gridXY;
-	}
-
-	function zeroVector(length)
-	{
-		var v = [];
-		for (var i = 0; i < length; i++) {
-			v.push(0);
-		}
-		return v;
-	}
-	
-	// Bezier basis function: N[i,n,a](u)
-	// See the book
-	function N(i, n, a, u)
-	{
-		if (n == 0) {
-			//var leftContinuous = false;
-			//if (leftContinuous)
-			//	return (u > a[i] && u <= a[i+1])? 1 : 0;
-			//else
-			//	return (u >= a[i] && u < a[i+1])? 1 : 0;
-			if (u >= a[i] && u < a[i+1])
-				return 1;
-			if (u == a[i+1] && a[i] < a[i+1] && a[i+1] == a[a.length-1])
-				return 1;
-			return 0;
-		}
-		var alpha1 = (a[i+n]-a[i]==0)? 0 : (u-a[i])/(a[i+n]-a[i]);
-		var alpha2 = (a[i+1+n]-a[i+1]==0)? 0 : (u-a[i+1])/(a[i+1+n]-a[i+1]);
-		return alpha1*N(i,n-1,a,u)+(1-alpha2)*N(i+1,n-1,a,u);
-	}
-	
-	// Derivative of B-spline basis Bezier basis function: N[i,n,a](u)
-	// See the book
-	function dN(i, n, a, u, d)
-	{
-		if (d == 0) {
-			return N(i, n, a, u);
-		}
-		if (n == 0) {
-			return NaN;
-		}
-		var v1 = (a[i+n] - a[i] == 0)? 1 : (a[i+n] - a[i]);
-		var v2 = (a[i+n+1] - a[i+1] == 0)? 1 : (a[i+n+1] - a[i+1]);
-		return n/v1*dN(i,n-1,a,u,d-1)-n/v2*dN(i+1,n-1,a,u,d-1);
-	}
+	];	
 	
   </script>
 </head>

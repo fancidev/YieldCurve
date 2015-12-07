@@ -4,8 +4,10 @@
 	},
 	"files": [
 		"BSpline.ts",
-		"instruments.ts",
+		"Instruments.ts",
 		"YieldCurveBuilder.ts",
-		"numericjs.d.ts"
+		"Demo.ts",
+		"numericjs.d.ts",
+		"canvasjs.d.ts"
 	]
 }

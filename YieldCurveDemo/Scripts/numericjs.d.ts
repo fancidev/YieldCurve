@@ -12,6 +12,8 @@ interface Numeric {
 	dot(x: vector, y: number): vector;
 	dot(x: vector, y: vector): number;
 
+	linspace(a: number, b: number, n: number): number[];
+
 	muleq(x: vector, y: number): vector;
 
 	rep<T>(dim: vector, val: T): T[];
@@ -19,7 +21,7 @@ interface Numeric {
 	solve(A: matrix, b: vector): vector;
 
 	sub(x: vector, y: vector): vector;
-	
+
 	subeq(x: vector, y: vector): vector;
 }
 
