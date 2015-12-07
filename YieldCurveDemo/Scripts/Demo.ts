@@ -7,6 +7,14 @@ namespace Demo {
 		y: number;
 	}
 
+	type CreateInstrument = (maturity: number) => Instrument;
+
+	export function createSwap(t: number): Swap {
+		return new Swap(t);
+	}
+	
+	// export createInstrument<T extends Instrument>
+
 	function getTermStructureChart(): CanvasJS.Chart {
 		return $("#termStructureChart").CanvasJSChart();
 	}
@@ -60,7 +68,7 @@ namespace Demo {
 
 	type NamedInterpScheme = InterpScheme & { name: string };
 
-	export function drawYieldCurve(preset: NamedInterpScheme) {
+	export function drawYieldCurve(preset: NamedInterpScheme, createPlotInstrument = createSwap) {
 
 		const dataPoints = defaultDataPoints;
 		const n = dataPoints.length;
@@ -91,10 +99,10 @@ namespace Demo {
 		}
 		
 		// Plot interpolated curve.
-		const PlotInstrument = Swap; // InstFwd; // LogDf; // Swap; // LogDf;
+		// const PlotInstrument = Swap; // InstFwd; // LogDf; // Swap; // LogDf;
 		const interpolatedPoints: DataPoint[] = [];
 		for (let t = dataPoints[0].x; t <= dataPoints[n - 1].x; t += 1 / 16) {
-			const instrument = new PlotInstrument(t);
+			const instrument = createPlotInstrument(t);
 			const impliedRate = instrument.impliedRate(discount);
 			interpolatedPoints.push({ x: t, y: impliedRate * 100 });
 		}
