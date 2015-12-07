@@ -22,9 +22,9 @@ interface Instrument {
 	/**
 	 * Computes implied swap rate off the given yield curve.
 	 * 
-	 * @param {Discount} discount   A function of the following signature:
-	 *                   discount(maturity, out deriv) => value
-	 * @param {number[]} gradient   (output) receives derivative
+	 * @param discount  A function of the following signature:
+	 *                  discount(maturity, out deriv) => value
+	 * @param gradient  (output) receives derivative
 	 */
 	impliedRate(discount: Discount, gradient?: number[]): number;
 }

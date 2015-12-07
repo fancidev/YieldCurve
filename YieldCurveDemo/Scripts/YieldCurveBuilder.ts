@@ -63,8 +63,8 @@ function buildYieldCurve(instruments: Instrument[], marketRates: number[], inter
 	//
 		
 	// We start with all weights equal to zero.
-	while (true) {
-
+	for (let iter = 1; iter <= 100; ++iter) {
+		
 		const C: number[][] = [];
 		const b: number[] = [];
 
@@ -85,8 +85,10 @@ function buildYieldCurve(instruments: Instrument[], marketRates: number[], inter
 		const diff = numeric.sub(marketRates, impliedRates);
 		const maxDiff = Math.max.apply(null, diff.map(Math.abs));
 		const eps = 1.0e-8; // 0.0001 bp
-		if (maxDiff < eps)
-			break;
+		if (maxDiff < eps) {
+			console.log('Newton method found solution in ' + iter + ' iterations.');
+			return discount;
+		}
 		b.push(...diff);
 		//alert(maxDiff);
 
@@ -106,5 +108,5 @@ function buildYieldCurve(instruments: Instrument[], marketRates: number[], inter
 		const delta = numeric.solve(C, b);
 		numeric.addeq(weights, delta);
 	}
-	return discount;
+	throw 'Newton method cannot find solution';
 }
