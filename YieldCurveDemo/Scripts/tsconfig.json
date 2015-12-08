@@ -10,6 +10,7 @@
 		"Demo.ts",
 		"SplineModel.ts",
 		"numericjs.d.ts",
-		"canvasjs.d.ts"
+		"canvasjs.d.ts",
+		"jquery.d.ts"
 	]
 }

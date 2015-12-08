@@ -34,9 +34,15 @@ class VasicekModel implements YieldCurveModel {
 			throw 'Must supply at least 2 maturities';
 
 		this.n = n;
-		this.k = ts.map((t) => Math.log(2) / t); // use supplied maturies as half-life
-		this.C = numeric.dot(0.0001, numeric.identity(n));
-		this.x = new Array<number>(n + 1);
+		// use mid-points of supplied maturities as half-life
+		this.k = new Array<number>(n);
+		for (let i = 0; i < n; i++) {
+			const halfLife = ts[i];
+			//this.k[n - 1 - i] = Math.log(2) / halfLife;
+			this.k[i] = Math.log(2) / halfLife;
+		}
+		this.C = numeric.mul(0.0001, numeric.identity(n));
+		this.x = numeric.rep([n + 1], 0);
 	}
 
 	/**
@@ -89,5 +95,14 @@ class VasicekModel implements YieldCurveModel {
 				// return -Math.expm1(-k * t) / k; // requires ES6
 				return (1 - Math.exp(-k * t)) / k;
 		}
+	}
+
+	info(): string {
+		let s = '';
+		s += '<pre>' + this.n + '-factor Vasicek model</pre>';
+		s += '<pre>x = ' + numeric.prettyPrint(numeric.mul(100, this.x)) + '%</pre>';
+		s += '<pre>k = ' + numeric.prettyPrint(this.k) + '</pre>';
+		//private C: number[][];
+		return s;
 	}
 }

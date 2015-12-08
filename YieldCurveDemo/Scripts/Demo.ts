@@ -85,11 +85,30 @@ namespace Demo {
 		}
 
 		// Build the yield curve.
+		/*
 		const model = new SplineModel(
 			instruments.map(instrument => instrument.maturity()),
 			preset.degree,
 			preset.conditions);
 		const discount = fitYieldCurve(model, instruments, marketRates);
+		*/
+		const fewerInstruments = new Array<Instrument>();
+		const fewerMarketRates = new Array<number>();
+		for (let i = 0; i < n; i++) {
+			const t = dataPoints[i].x;
+			if (t == 0.25 || t == 2 || t == 10 || t == 30) {
+				fewerInstruments.push(new Instrument(t));
+				fewerMarketRates.push(dataPoints[i].y / 100);
+			}
+		}
+		const model = new VasicekModel(fewerInstruments.map(instrument => instrument.maturity()));
+		const discount = fitYieldCurve(model, fewerInstruments, fewerMarketRates);
+		
+		// Display model info.
+		if (model.info) {
+			$('#debugOutput').html(model.info());
+			$('#bumpResponseChart').css('display', 'none');
+		}
 		
 		// Plot it...
 		const chart = getTermStructureChart();

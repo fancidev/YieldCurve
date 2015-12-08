@@ -28,6 +28,11 @@ interface YieldCurveModel {
 	 * linear constraint. 
 	 */
 	constraints?(): [number[][], number[]];
+	
+	/**
+	 * Returns an HTML segment that describes the attributes of this model.
+	 */
+	info?(): string;
 }
 
 /**
@@ -109,7 +114,7 @@ function fitYieldCurve(model: YieldCurveModel, instruments: Instrument[], market
 		const state = model.state();
 		numeric.addeq(state, delta);
 	}
-	
+
 	alert('Newton method cannot find solution');
 	throw new Error('Newton method cannot find solution');
 }

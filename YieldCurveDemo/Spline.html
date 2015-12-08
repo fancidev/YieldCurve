@@ -19,6 +19,7 @@
 
   <script type="text/javascript" src="Scripts/BSpline.js"></script>
   <script type="text/javascript" src="Scripts/SplineModel.js"></script>
+  <script type="text/javascript" src="Scripts/Vasicek.js"></script>
   <script type="text/javascript" src="Scripts/YieldCurveBuilder.js"></script>
   <script type="text/javascript" src="Scripts/Instruments.js"></script>
   <script type="text/javascript" src="Scripts/Demo.js"></script>
@@ -211,12 +212,11 @@ $(function () {
 		}
 		
 		var row = demoData[index];
-		var dataPoints = new Array(n);
+		var dataPoints = [];
 		for (var i = 1; i <= n; i++) {
-			dataPoints[i-1] = {
-				x: header[i],
-				y: row[i]
-			};
+			var x = header[i];
+			var y = row[i];
+			dataPoints.push({ x: x, y: y });
 		}
 		return dataPoints;
 	}

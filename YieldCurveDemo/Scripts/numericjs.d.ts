@@ -20,14 +20,18 @@ interface Numeric {
 	dot(x: number, y: vector): vector;
 	dot(x: vector, y: number): vector;
 	dot(x: vector, y: vector): number;
-	dot(x: number, y: matrix): matrix;
-	dot(x: matrix, y: number): matrix;
 
 	identity(n: int): matrix;
 
 	linspace(a: number, b: number, n: number): number[];
 
+	mul(x: vector, y: number): vector;
+	mul(x: number, y: vector): vector;
+	mul(x: matrix, y: number): matrix;
+	mul(x: number, y: matrix): matrix;
 	muleq(x: vector, y: number): vector;
+
+	prettyPrint(x: any): string;
 
 	rep<T>(dim: int[], val: T): T[];
 
