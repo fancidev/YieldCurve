@@ -1,7 +1,5 @@
 'use strict';
 
-type int = number;
-
 interface BSplineConstraint {
 	x: number;
 	y: number;

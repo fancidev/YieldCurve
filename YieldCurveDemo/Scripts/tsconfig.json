@@ -6,6 +6,7 @@
 		"BSpline.ts",
 		"Instruments.ts",
 		"YieldCurveBuilder.ts",
+		"Vasicek.ts",
 		"Demo.ts",
 		"numericjs.d.ts",
 		"canvasjs.d.ts"
