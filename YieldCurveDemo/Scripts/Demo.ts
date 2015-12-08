@@ -7,6 +7,11 @@ namespace Demo {
 		y: number;
 	}
 
+	interface InterpScheme {
+		degree: int;
+		conditions: { knotIndex: int, derivOrder: int, derivValue: number }[];
+	}
+
 	type CreateInstrument = (maturity: number) => Instrument;
 
 	export function createSwap(t: number): Swap {
@@ -80,7 +85,11 @@ namespace Demo {
 		}
 
 		// Build the yield curve.
-		const discount = buildYieldCurve(instruments, marketRates, preset);
+		const model = new SplineModel(
+			instruments.map(instrument => instrument.maturity()),
+			preset.degree,
+			preset.conditions);
+		const discount = fitYieldCurve(model, instruments, marketRates);
 		
 		// Plot it...
 		const chart = getTermStructureChart();
@@ -136,7 +145,9 @@ namespace Demo {
 		}
 
 		// Build the yield curve.
-		const baseCurve = buildYieldCurve(instruments, marketRates, preset);
+		const ts = instruments.map(instrument => instrument.maturity());
+		const model = new SplineModel(ts, preset.degree, preset.conditions);
+		const baseCurve = fitYieldCurve(model, instruments, marketRates);
 
 		let plotInstruments = new Array<Instrument>();
 		for (let t = dataPoints[0].x; t <= dataPoints[n - 1].x; t += 1 / 16) {
@@ -154,7 +165,8 @@ namespace Demo {
 		for (let i = 0; i < instruments.length; i++) {
 			const bumpedMarketRates = marketRates.slice();
 			bumpedMarketRates[i] += 0.01;
-			const bumpedCurve = buildYieldCurve(instruments, bumpedMarketRates, preset);
+			// Note: we are starting from the previous calibrated state
+			const bumpedCurve = fitYieldCurve(model, instruments, bumpedMarketRates);
 			let bumpedOutput = new Array<number>();
 			for (const instrument of plotInstruments) {
 				const impliedRate = instrument.impliedRate(bumpedCurve);

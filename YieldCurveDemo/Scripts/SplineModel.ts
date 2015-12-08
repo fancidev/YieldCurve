@@ -1,3 +1,5 @@
+/// <reference path="BSpline.ts"/>
+
 interface SplineModelConstraint {
 	knotIndex: int;
 	derivOrder: int;
@@ -40,7 +42,7 @@ class SplineModel implements YieldCurveModel {
 
 		ts = [0, ...ts].sort((a, b) => (a - b));
 		this.spline = new BSpline(ts, p, true);
-		this.weights = new Array<number>(n + p);
+		this.weights = numeric.rep([n + p], 0); // initial weight = 0
 
 		// Build additional constraints.
 		const condLHS = new Array<Array<number>>(p);
