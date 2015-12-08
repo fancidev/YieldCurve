@@ -100,7 +100,7 @@ namespace Demo {
 		// Plot interpolated curve.
 		// const PlotInstrument = Swap; // InstFwd; // LogDf; // Swap; // LogDf;
 		const interpolatedPoints: DataPoint[] = [];
-		for (let t = dataPoints[0].x; t <= dataPoints[n - 1].x; t += 1 / 16) {
+		for (let t = 1 / 16; t <= dataPoints[n - 1].x; t += 1 / 16) {
 			const instrument = createPlotInstrument(t);
 			const impliedRate = instrument.impliedRate(discount);
 			interpolatedPoints.push({ x: t, y: impliedRate * 100 });

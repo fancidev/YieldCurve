@@ -1,5 +1,5 @@
 /**
- * Represents a yield curve implied from an n-factor Vasicek model.
+ * Represents an n-factor Vasicek model of the yield curve.
  *
  * The model has two types of parameters: structural parameters and
  * state vector. Structural parameters must be specified a-priori;
@@ -21,7 +21,7 @@
  *   x[0..n-1] -- initial value of the factors
  *   x[n] -- mean reversion target 
  */
-class VasicekCurve implements YieldCurveModel {
+class VasicekModel implements YieldCurveModel {
 
 	private n: number;
 	private k: number[];

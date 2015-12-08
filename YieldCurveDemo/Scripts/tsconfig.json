@@ -8,6 +8,7 @@
 		"YieldCurveBuilder.ts",
 		"Vasicek.ts",
 		"Demo.ts",
+		"SplineModel.ts",
 		"numericjs.d.ts",
 		"canvasjs.d.ts"
 	]
