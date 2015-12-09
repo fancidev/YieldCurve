@@ -1,4 +1,4 @@
-/// <reference path="BSpline.ts"/>
+'use strict';
 
 interface SplineModelConstraint {
 	knotIndex: int;

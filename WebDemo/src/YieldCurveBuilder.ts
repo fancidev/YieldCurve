@@ -1,3 +1,5 @@
+'use strict';
+
 interface YieldCurveModel {
 	/**
 	 * Gets a reference to the internal state vector of the model.

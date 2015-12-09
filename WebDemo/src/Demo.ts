@@ -1,3 +1,5 @@
+'use strict';
+
 namespace Demo {
 
 	interface DataPoint {

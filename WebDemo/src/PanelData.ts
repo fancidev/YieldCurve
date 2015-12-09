@@ -1,3 +1,5 @@
+'use strict';
+
 interface DataFrame<R, C> extends Array<Array<number>> {
 	rownames?: R[];
 	colnames?: C[];

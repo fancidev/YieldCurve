@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * Represents an n-factor Vasicek model of the yield curve.
  *
