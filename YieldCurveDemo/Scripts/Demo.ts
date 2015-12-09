@@ -73,7 +73,9 @@ namespace Demo {
 
 	type NamedInterpScheme = InterpScheme & { name: string };
 
-	export function drawYieldCurve(dataPoints: DataPoint[], preset: NamedInterpScheme, createPlotInstrument = createSwap) {
+	export function drawYieldCurve(
+		dataPoints: DataPoint[], preset: NamedInterpScheme, createPlotInstrument = createSwap,
+		vasicekModel: VasicekModel = null) {
 
 		const n = dataPoints.length;
 		const Instrument = Swap; // Fra;
@@ -101,7 +103,7 @@ namespace Demo {
 				fewerMarketRates.push(dataPoints[i].y / 100);
 			}
 		}
-		const model = new VasicekModel(fewerInstruments.map(instrument => instrument.maturity()));
+		const model = vasicekModel ? vasicekModel : new VasicekModel(fewerInstruments.map(instrument => instrument.maturity()));
 		const discount = fitYieldCurve(model, fewerInstruments, fewerMarketRates);
 		
 		// Display model info.

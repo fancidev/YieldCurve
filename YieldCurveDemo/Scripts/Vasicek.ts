@@ -35,7 +35,7 @@ class VasicekModel implements YieldCurveModel {
 
 		this.n = n;
 		this.k = ts.map(t=> Math.log(2) / t); // use maturity as half-life
-		this.C = numeric.mul(0.0001, numeric.identity(n));
+		this.C = numeric.mul(0.0000, numeric.identity(n));
 		this.x = numeric.rep([n], 0);
 	}
 
@@ -59,7 +59,7 @@ class VasicekModel implements YieldCurveModel {
 		const k = this.k;
 		const C = this.C;
 		const x = this.x;
-		const w = 0; //.05; // 0;
+		const w = 0.0275; // 0;
 
 		// TODO: optimize calculation
 		let A = 0;
@@ -96,7 +96,8 @@ class VasicekModel implements YieldCurveModel {
 		s += '<pre>' + this.n + '-factor Vasicek model</pre>';
 		s += '<pre>x = ' + numeric.prettyPrint(numeric.mul(100, this.x)) + '%</pre>';
 		s += '<pre>k = ' + numeric.prettyPrint(this.k) + '</pre>';
-		//private C: number[][];
+		s += '<pre>σ = ' + numeric.prettyPrint(getStdev(this.C)) + '</pre>';
+		s += '<pre>ρ = ' + "\r\n" + numeric.prettyPrint(getCorrelation(this.C)) + '</pre>';
 		return s;
 	}
 }

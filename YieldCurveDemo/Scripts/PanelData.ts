@@ -136,6 +136,31 @@ function covariance(table: PanelData): DataFrame<string, string> {
 	return C;
 }
 
+function getStdev(covar: number[][]): number[] {
+	const n = numRows(covar);
+	const stdev = new Array<number>(n);
+	for (let i = 0; i < n; i++) {
+		stdev[i] = Math.sqrt(covar[i][i]);
+	}
+	return stdev;
+}
+
+function getCorrelation(covar: number[][]): number[][] {
+	const n = numRows(covar);
+	const corr = numeric.clone(covar);
+	for (let i = 0; i < n; i++) {
+		for (let j = 0; j < n; j++) {
+			if (j !== i) {
+				corr[i][j] /= Math.sqrt(corr[i][i] * corr[j][j]);
+			}
+		}
+	}
+	for (let i = 0; i < n; i++) {
+		corr[i][i] = 1.0;
+	}
+	return corr;
+}
+
 function diff(table: PanelData, d = 1): PanelData {
 	const nobs = numRows(table);
 	if (d >= nobs) {

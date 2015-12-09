@@ -140,8 +140,14 @@ function calibrateVasicek(model: VasicekModel, instruments: Instrument[], market
 		const stateDiff =diff(stateHistory);
 		const covar = covariance(stateDiff);
 		numeric.muleq(covar, 250);
-		console.log('Realized factor covariance:');
-		console.log(numeric.prettyPrint(covar));
+		
+		// Debug print.
+		const volatility = getStdev(covar);
+		console.log('Realized factor volatility:');
+		console.log(numeric.prettyPrint(volatility));
+		const correl = getCorrelation(covar);
+		console.log('Realized factor correlation:');
+		console.log(numeric.prettyPrint(correl));
 		
 		// Compare the historical covariance with the model covariance.
 		const modelCovar = model.covariance();

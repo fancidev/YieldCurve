@@ -94,11 +94,12 @@ $(function () {
 	var currentPresetIndex = 2;
 	var currentPlotInstrument = 0;
 	var currentDataPoints = getDemoDataPoints(demoData.length - 1);
+	var currentVasicekModel; // = new VasicekModel(instruments.map(maturity));
 	
 	$(document).ready(function () {
 		
 		$("#dateList").jqxDropDownList({
-			source: demoData.slice(1).map(function(row){return CanvasJS.formatDate(row[0],'YYYY-MM-DD');}).reverse(),
+			source: demoData.rownames.map(function(dt){return CanvasJS.formatDate(dt,'YYYY-MM-DD');}).reverse(),
 			selectedIndex: 0, 
 			width: 120, 
 			height: 20,
@@ -148,7 +149,11 @@ $(function () {
 	
 	function refreshTermStructure()
 	{
-		Demo.drawYieldCurve(currentDataPoints, splinePresets[currentPresetIndex], curveTypes[currentPlotInstrument].create);
+		Demo.drawYieldCurve(
+			currentDataPoints, 
+			splinePresets[currentPresetIndex], 
+			curveTypes[currentPlotInstrument].create,
+			currentVasicekModel);
 		//Demo.drawBumpResponse(splinePresets[index]);
 		//Demo.drawBezierBasis(splinePresets[index]);
 	}
@@ -201,6 +206,7 @@ $(function () {
 		]
 	}];
 	
+	/*
 	function getDemoDataPoints(index) {
 		var header = demoData[0].slice();
 		var n = header.length - 1;
@@ -215,6 +221,27 @@ $(function () {
 		var row = demoData[index];
 		var dataPoints = [];
 		for (var i = 1; i <= n; i++) {
+			var x = header[i];
+			var y = row[i];
+			dataPoints.push({ x: x, y: y });
+		}
+		return dataPoints;
+	}
+	*/
+	
+	function getDemoDataPoints(index) {
+		var header = demoData.colnames.slice();
+		for (var i = 0; i < header.length; i++) {
+			var unit = header[i].substring(header[i].length - 1);
+			var count = parseInt(header[i].substring(0, header[i].length - 1));
+			if (unit === 'M')
+				count /= 12;
+			header[i] = count;
+		}
+		
+		var row = demoData[index];
+		var dataPoints = [];
+		for (var i = 0; i < row.length; i++) {
 			var x = header[i];
 			var y = row[i];
 			dataPoints.push({ x: x, y: y });
@@ -249,9 +276,10 @@ $(function () {
 			new Swap(30)
 		];
 		
-		var model = new VasicekModel(instruments.map(maturity));		
-		
+		var model = new VasicekModel(instruments.map(maturity));
 		calibrateVasicek(model, instruments, panel);
+		currentVasicekModel = model;
+		refreshTermStructure();
 	}
 	
 	function maturity(instrument) {
