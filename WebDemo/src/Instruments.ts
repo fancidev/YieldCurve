@@ -1,5 +1,3 @@
-/// <reference path="numericjs.d.ts" />
-
 'use strict';
 
 interface Discount {

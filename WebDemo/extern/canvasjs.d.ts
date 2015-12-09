@@ -1,14 +1,14 @@
-// Type definitions for CanvasJS v1.5.1
+﻿// Type definitions for CanvasJS v1.5.1
 // Project: http://canvasjs.com/
 // Definitions by: Mark Overholt <https://github.com/mover5>
 // Definitions: https://github.com/borisyankov/DefinitelyTyped
 
 declare module CanvasJS {
-
     class Chart {
+        
         /** 
-         * The current options of the chart. 
-         */
+        * The current options of the chart. 
+        */
         options: ChartOptions;
 
         /** 
@@ -25,7 +25,6 @@ declare module CanvasJS {
         render(options?: ChartOptions): void;
     }
 
-
     /** 
     * Adds a new chart color set
     * @param the name of the color set
@@ -33,6 +32,7 @@ declare module CanvasJS {
     */
     function addColorSet(colorSetName: string, colorSetArray: string[]): void;
 
+    
     /** 
     * Adds a new culture info for your chart
     * @param culture the name of the culture
