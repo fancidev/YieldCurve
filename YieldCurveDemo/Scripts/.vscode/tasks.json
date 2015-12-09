@@ -21,7 +21,7 @@
 	"showOutput": "silent",
 
 	// args is the HelloWorld program to compile.
-	"args": ["Instruments.ts", "YieldCurveBuilder.ts", "BSpline.ts", "Demo.ts", "Vasicek.ts", "SplineModel.ts"],
+	"args": ["-p", "."],
 
 	// use the standard tsc problem matcher to find compile problems
 	// in the output.

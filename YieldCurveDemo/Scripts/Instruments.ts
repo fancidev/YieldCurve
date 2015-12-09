@@ -97,7 +97,7 @@ class InstFwd implements Instrument {
 	}
 
 	impliedRate(discount: Discount, gradient?: number[]) {
-		var gradient2 = gradient ? [] : null;
+		var gradient2 = gradient ? new Array<number>() : null;
 		var vEnd = this._end.impliedRate(discount, gradient);
 		var vStart = this._start.impliedRate(discount, gradient2);
 		var dt = this._dt;
@@ -129,14 +129,14 @@ class Swap implements Instrument {
 
 		var T = this._maturity;
 
-		var finalDfDeriv = [];
+		var finalDfDeriv = new Array<number>();
 		var finalDf = discount(T, finalDfDeriv);
 
 		var annuityFactorDeriv = numeric.rep([finalDfDeriv.length], 0);
 		var annuityFactor = 0.0;
 		var frequency = 0.25;
 		for (var t = T; t > 0; t -= frequency) {
-			var dfDeriv = [];
+			var dfDeriv = new Array<number>();
 			var df = discount(t, dfDeriv);
 			var accrualFactor = Math.min(frequency, t);
 			annuityFactor += accrualFactor * df;

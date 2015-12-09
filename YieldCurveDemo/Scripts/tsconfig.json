@@ -1,6 +1,7 @@
 {
 	"compilerOptions": {
-		"noImplicitAny": true
+		"noImplicitAny": true,
+		"target": "ES5"
 	},
 	"files": [
 		"BSpline.ts",
@@ -9,6 +10,8 @@
 		"Vasicek.ts",
 		"Demo.ts",
 		"SplineModel.ts",
+		"PanelData.ts",
+		"DemoData.ts",
 		"numericjs.d.ts",
 		"canvasjs.d.ts",
 		"jquery.d.ts"
