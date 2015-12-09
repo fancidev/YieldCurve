@@ -93,7 +93,7 @@ $(function () {
 
 	var currentPresetIndex = 2;
 	var currentPlotInstrument = 0;
-	var currentDataPoints = getDemoDataPoints(demoData.length - 1);
+	var currentDateIndex = demoData.length - 1;
 	var currentVasicekModel; // = new VasicekModel(instruments.map(maturity));
 	
 	$(document).ready(function () {
@@ -109,7 +109,7 @@ $(function () {
 		$("#dateList").on('select', function (e) {
 			if (e && e.args) {
 				var index = demoData.length - 1 - e.args.index;
-				currentDataPoints = getDemoDataPoints(index);
+				currentDateIndex = index;
 				refreshTermStructure();
 			}
 		});
@@ -150,7 +150,7 @@ $(function () {
 	function refreshTermStructure()
 	{
 		Demo.drawYieldCurve(
-			currentDataPoints, 
+			getDemoDataPoints(currentDateIndex),
 			splinePresets[currentPresetIndex], 
 			curveTypes[currentPlotInstrument].create,
 			currentVasicekModel);
@@ -266,7 +266,9 @@ $(function () {
 		
 		var panel = demoData;
 		panel = getColumns(panel, ['3M','2Y','10Y','30Y']);
-		panel = panel.slice(panel.length - 100); // last 100 days of data
+		panel = panel.slice(currentDateIndex - 100, currentDateIndex); // last 100 days of data
+		//panel = panel.slice(panel.length - 100); // last 100 days of data
+		//alert('Calibrating from ' + panel.rownames[0] + ' to ' + panel.rownames[panel.rownames.length - 1]);
 		panel = scale(panel, 0.01);
 		
 		var instruments = [
