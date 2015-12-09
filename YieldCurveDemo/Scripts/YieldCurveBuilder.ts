@@ -129,15 +129,15 @@ function calibrateVasicek(model: VasicekModel, instruments: Instrument[], market
 	for (let iter = 1; iter < 50; iter++) {
 		
 		// Fit the model to historical data to get state vector time series.
-		const stateHistory :PanelData= new Array<Array<number>>();
+		const stateHistory: PanelData = new Array<Array<number>>();
 		for (let i = 0; i < numDates; i++) {
 			fitYieldCurve(model, instruments, marketRates[i]);
 			stateHistory[i] = model.state().slice();
 		}
 		
 		// Compute the historical covariance matrix of state vector.
-		stateHistory.rownames=marketRates.rownames;
-		const stateDiff =diff(stateHistory);
+		stateHistory.rownames = marketRates.rownames;
+		const stateDiff = diff(stateHistory);
 		const covar = covariance(stateDiff);
 		numeric.muleq(covar, 250);
 		
@@ -150,10 +150,14 @@ function calibrateVasicek(model: VasicekModel, instruments: Instrument[], market
 		console.log(numeric.prettyPrint(correl));
 		
 		// Compare the historical covariance with the model covariance.
+		// Because the w parameter in Vasicek model may be treated as
+		// either state variable or structural variable, we only compare
+		// as many entries as present in the model covar matrix.
 		const modelCovar = model.covariance();
+		const nf = modelCovar.length;
 		let maxDiff = -Infinity;
-		for (let i = 0; i < covar.length; i++) {
-			for (let j = 0; j < covar[i].length; j++) {
+		for (let i = 0; i < nf; i++) {
+			for (let j = 0; j < nf; j++) {
 				maxDiff = Math.max(maxDiff, Math.abs(covar[i][j] - modelCovar[i][j]));
 			}
 		}
@@ -161,9 +165,12 @@ function calibrateVasicek(model: VasicekModel, instruments: Instrument[], market
 			return;
 		}
 	
-		// Update model covariance and continue iteration.
-		modelCovar.length = 0;
-		modelCovar.push(...covar);
+		// Update model covariance and then continue iteration.
+		for (let i = 0; i < nf; i++) {
+			for (let j = 0; j < nf; j++) {
+				modelCovar[i][j] = covar[i][j];
+			}
+		}
 	}
 	alert('Calibration failed to converge');
 	throw new Error('Calibration failed to converge');
