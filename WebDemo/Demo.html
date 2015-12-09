@@ -1,0 +1,314 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <title>Demo</title>
+  <script type="text/javascript" src="scripts/jquery-1.11.3.min.js"></script>
+  <script type="text/javascript" src="scripts/canvasjs-1.8.0-beta4-mod.js"></script>
+  <script type="text/javascript" src="scripts/jquery.canvasjs.js"></script>
+  <script type="text/javascript" src="scripts/numeric-1.2.6.js"></script>
+
+  <script type="text/javascript" src="scripts/jqwidgets/jqxcore.js"></script>
+  <script type="text/javascript" src="scripts/jqwidgets/jqxbuttons.js"></script>
+  <script type="text/javascript" src="scripts/jqwidgets/jqxscrollbar.js"></script>
+  <script type="text/javascript" src="scripts/jqwidgets/jqxlistbox.js"></script>
+  <script type="text/javascript" src="scripts/jqwidgets/jqxdropdownlist.js"></script>
+  <link rel="stylesheet" href="scripts/jqwidgets/styles/jqx.base.css" type="text/css" />
+  
+  <script type="text/javascript" src="scripts/BSpline.js"></script>
+  <script type="text/javascript" src="scripts/SplineModel.js"></script>
+  <script type="text/javascript" src="scripts/Vasicek.js"></script>
+  <script type="text/javascript" src="scripts/YieldCurveBuilder.js"></script>
+  <script type="text/javascript" src="scripts/Instruments.js"></script>
+  <script type="text/javascript" src="scripts/PanelData.js"></script>
+  <script type="text/javascript" src="scripts/DemoData.js"></script>
+  <script type="text/javascript" src="scripts/Demo.js"></script>
+  
+  <script type="text/javascript">
+$(function () {
+	
+	$("#termStructureChart").CanvasJSChart({
+		title: {
+			text: 'US Swap Rate Term Structure',
+			fontSize: 16
+		},
+		legend: { 
+			fontSize: 12,
+		},
+		axisX: {
+			labelFontSize: 12,
+			minimum: 0,
+			gridThickness: 1,
+			gridColor: 'gray',
+			gridDashType: 'dash'
+		},
+		axisY: {
+			labelFontSize: 12,
+			gridThickness: 1,
+			gridColor: 'gray',
+			gridDashType: 'dash',
+			labelFormatter: function (e) { return CanvasJS.formatNumber(e.value, '0.00'); }
+		},
+		toolTip: {
+			shared: true
+		},
+		data: [ ]
+	});
+	
+	$("#bumpResponseChart").CanvasJSChart({
+		title: {
+			text: 'Bump Response',
+			fontSize: 16
+		},
+		legend: {
+			fontSize: 12,
+		},
+		axisX: {
+			labelFontSize: 12,
+			minimum: 0,
+			gridThickness: 1,
+			gridColor: 'gray',
+			gridDashType: 'dash'
+		},
+		axisY: {
+			labelFontSize: 12,
+			gridThickness: 1,
+			gridColor: 'gray',
+			gridDashType: 'dash',
+			interval: 1.0,
+			//labelFormatter: function (e) { return CanvasJS.formatNumber(e.value, '0.00'); }
+		},
+		toolTip: {
+			shared: false
+		},
+		data: [ ]
+	});
+});
+
+  </script>
+  <script type="text/javascript">
+
+	window.onerror = function () { return true; };
+
+	var currentPresetIndex = 2;
+	var currentPlotInstrument = 0;
+	var currentDateIndex = demoData.length - 1;
+	var currentVasicekModel; // = new VasicekModel(instruments.map(maturity));
+	
+	$(document).ready(function () {
+		
+		$("#dateList").jqxDropDownList({
+			source: demoData.rownames.map(function(dt){return CanvasJS.formatDate(dt,'YYYY-MM-DD');}).reverse(),
+			selectedIndex: 0, 
+			width: 120, 
+			height: 20,
+			//autoDropDownHeight: true,
+			animationType: 'none',
+		});
+		$("#dateList").on('select', function (e) {
+			if (e && e.args) {
+				var index = demoData.length - 1 - e.args.index;
+				currentDateIndex = index;
+				refreshTermStructure();
+			}
+		});
+		
+		$("#presetList").jqxDropDownList({
+			source: splinePresets.map(function(p){return p.name+' Spline';}), 
+			selectedIndex: currentPresetIndex, 
+			width: 150, 
+			height: 20,
+			autoDropDownHeight: true,
+			animationType: 'none',
+		});
+		$("#presetList").on('select', function (e) {
+			if (e && e.args) {
+				currentPresetIndex = e.args.index;
+				refreshTermStructure();
+			}
+		});
+
+		$("#curveTypeList").jqxDropDownList({
+			source: curveTypes.map(function(ct){return ct.name;}), 
+			selectedIndex: currentPlotInstrument, 
+			width: 180, 
+			height: 20,
+			autoDropDownHeight: true,
+			animationType: 'none',
+		});
+		$("#curveTypeList").on('select', function (e) {
+			if (e && e.args) {
+				currentPlotInstrument = e.args.index;
+				refreshTermStructure();
+			}
+		});
+		
+		refreshTermStructure();
+	});
+	
+	function refreshTermStructure()
+	{
+		Demo.drawYieldCurve(
+			getDemoDataPoints(currentDateIndex),
+			splinePresets[currentPresetIndex], 
+			curveTypes[currentPlotInstrument].create,
+			currentVasicekModel);
+		//Demo.drawBumpResponse(splinePresets[index]);
+		//Demo.drawBezierBasis(splinePresets[index]);
+	}
+	
+	var curveTypes = [
+		{ name: 'Swap', create: function (t) { return new Swap(t);} },
+		{ name: 'Zero Coupon', create: function (t) { return new Fra(t);} },
+		{ name: 'Log Discount Factor', create: function (t) { return new LogDf(t);} },
+		{ name: 'Instantaneous Forward', create: function (t) { return new InstFwd(t);} },
+	];
+	
+	var splinePresets = [
+	{
+		name: 'Linear',
+		degree: 1,
+		conditions: []
+	},
+	{
+		name: 'Quadratic',
+		degree: 2,
+		conditions: [ 
+			{ knotIndex: -1, derivOrder: 2, derivValue: 0 },
+		]
+	},
+	{
+		name: 'Cubic',
+		degree: 3,
+		conditions: [
+			{ knotIndex:  0, derivOrder: 2, derivValue: 0 },
+			{ knotIndex: -1, derivOrder: 2, derivValue: 0 },
+		]
+	},
+	{
+		name: 'Quartic',
+		degree: 4,
+		conditions: [
+			{ knotIndex:  0, derivOrder: 2, derivValue: 0 },
+			{ knotIndex: -1, derivOrder: 3, derivValue: 0 },
+			{ knotIndex: -1, derivOrder: 2, derivValue: 0 },
+		]
+	},
+	{
+		name: 'Quintic',
+		degree: 5,
+		conditions: [
+			{ knotIndex:  0, derivOrder: 2, derivValue: 0 },
+			{ knotIndex: -1, derivOrder: 4, derivValue: 0 },
+			{ knotIndex: -1, derivOrder: 3, derivValue: 0 },
+			{ knotIndex: -1, derivOrder: 2, derivValue: 0 },			
+		]
+	}];
+	
+	/*
+	function getDemoDataPoints(index) {
+		var header = demoData[0].slice();
+		var n = header.length - 1;
+		for (var i = 1; i <= n; i++) {
+			var unit = header[i].substring(header[i].length - 1);
+			var count = parseInt(header[i].substring(0, header[i].length - 1));
+			if (unit === 'M')
+				count /= 12;
+			header[i] = count;
+		}
+		
+		var row = demoData[index];
+		var dataPoints = [];
+		for (var i = 1; i <= n; i++) {
+			var x = header[i];
+			var y = row[i];
+			dataPoints.push({ x: x, y: y });
+		}
+		return dataPoints;
+	}
+	*/
+	
+	function getDemoDataPoints(index) {
+		var header = demoData.colnames.slice();
+		for (var i = 0; i < header.length; i++) {
+			var unit = header[i].substring(header[i].length - 1);
+			var count = parseInt(header[i].substring(0, header[i].length - 1));
+			if (unit === 'M')
+				count /= 12;
+			header[i] = count;
+		}
+		
+		var row = demoData[index];
+		var dataPoints = [];
+		for (var i = 0; i < row.length; i++) {
+			var x = header[i];
+			var y = row[i];
+			dataPoints.push({ x: x, y: y });
+		}
+		return dataPoints;
+	}
+	
+	var defaultDataPoints = [
+		{ x: 0.25, y: 5.39 },
+		{ x: 1, y: 5.39 },
+		{ x: 2, y: 5.21 },
+		{ x: 3, y: 5.16 },
+		{ x: 4, y: 5.16 },
+		{ x: 5, y: 5.18 },
+		{ x: 7, y: 5.23 },
+		{ x: 10, y: 5.29 },
+		{ x: 30, y: 5.41 }
+	];	
+	
+	function doCalibration() {
+		//alert('calibrate');
+		
+		var panel = demoData;
+		panel = getColumns(panel, ['3M','2Y','10Y','30Y']);
+		panel = panel.slice(currentDateIndex - 100, currentDateIndex); // last 100 days of data
+		//panel = panel.slice(panel.length - 100); // last 100 days of data
+		//alert('Calibrating from ' + panel.rownames[0] + ' to ' + panel.rownames[panel.rownames.length - 1]);
+		panel = scale(panel, 0.01);
+		
+		var instruments = [
+			new Swap(0.25),
+			new Swap(2),
+			new Swap(10),
+			new Swap(30)
+		];
+		
+		var model = new VasicekModel(instruments.map(maturity));
+		calibrateVasicek(model, instruments, panel);
+		currentVasicekModel = model;
+		refreshTermStructure();
+	}
+	
+	function maturity(instrument) {
+		return instrument.maturity();
+	}
+	
+  </script>
+</head>
+
+<body>
+  <div>
+    <div id="toolBar" style="margin-bottom: 5px; padding:5px; border-width:1px; border-color:black; border-style:solid">
+      <div style="float: left"><input type="button" value="Calibrate" onclick="doCalibration()"/></div>
+      <div style="float: left">&nbsp;Date:&nbsp;</div>
+      <div style="float: left" id="dateList">[Date List]</div>
+      <div style="float: left">&nbsp;Interpolation:&nbsp;</div>
+      <div style="float: left" id="presetList">[Preset List]</div>
+      <div style="float: left">&nbsp;Curve:&nbsp;</div>
+      <div style="float: left" id="curveTypeList">[Curve Type List]</div>
+      <div>&nbsp;</div>
+    </div>
+    <div id="termStructureChart" style="width:100%; height:300px; border-width:1px; border-style:solid; border-color:black">
+      [Term Structure]
+    </div>
+    <div id="bumpResponseChart" style="margin-top: 5px; width:100%; height:250px; border-width:1px; border-style:solid; border-color:black">
+      [Bump Response]
+    </div>
+    <div id="debugOutput">[Debug]</div>
+  </div>
+</body>
+</html>
