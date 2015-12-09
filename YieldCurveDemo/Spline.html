@@ -233,13 +233,39 @@ $(function () {
 		{ x: 30, y: 5.41 }
 	];	
 	
+	function doCalibration() {
+		alert('calibrate');
+		
+		var panel = demoData;
+		panel = PanelData.getColumns(panel, ['3M','2Y','10Y','30Y']);
+		panel = PanelData.sort(panel, false);
+		panel = panel.slice(0, 100); // 100 days of data
+		PanelData.scale(panel, 1/100);
+		
+		var instruments = [
+			new Swap(0.25),
+			new Swap(2),
+			new Swap(10),
+			new Swap(30)
+		];
+		
+		var model = new VasicekModel(instruments.map(maturity));		
+		
+		calibrateVasicek(model, instruments, panel);
+	}
+	
+	function maturity(instrument) {
+		return instrument.maturity();
+	}
+	
   </script>
 </head>
 
 <body>
   <div>
     <div id="toolBar" style="margin-bottom: 5px; padding:5px; border-width:1px; border-color:black; border-style:solid">
-      <div style="float: left">Date:&nbsp;</div>
+      <div style="float: left"><input type="button" value="Calibrate" onclick="doCalibration()"/></div>
+      <div style="float: left">&nbsp;Date:&nbsp;</div>
       <div style="float: left" id="dateList">[Date List]</div>
       <div style="float: left">&nbsp;Interpolation:&nbsp;</div>
       <div style="float: left" id="presetList">[Preset List]</div>

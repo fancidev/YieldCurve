@@ -29,7 +29,9 @@ interface Numeric {
 	mul(x: number, y: vector): vector;
 	mul(x: matrix, y: number): matrix;
 	mul(x: number, y: matrix): matrix;
+
 	muleq(x: vector, y: number): vector;
+	muleq(x: matrix, y: number): matrix;
 
 	prettyPrint(x: any): string;
 

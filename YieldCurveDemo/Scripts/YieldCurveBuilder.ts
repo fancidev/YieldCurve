@@ -118,3 +118,187 @@ function fitYieldCurve(model: YieldCurveModel, instruments: Instrument[], market
 	alert('Newton method cannot find solution');
 	throw new Error('Newton method cannot find solution');
 }
+
+function calibrateVasicek(model: VasicekModel, instruments: Instrument[], marketRates: number[][]) {
+
+	const numDates = marketRates.length - 1;
+	const numSeries = instruments.length;
+
+	for (let iter = 1; iter < 50; iter++) {
+		
+		// Fit the model to historical data to get state vector time series.
+		const stateHistory = new Array<Array<number>>();
+		for (let i = 0; i < numDates; i++) {
+			fitYieldCurve(model, instruments, marketRates[i + 1].slice(1));
+			stateHistory[i] = model.state().slice();
+		}
+	
+		// Compute the historical covariance matrix of state vector.
+		const stateDiff = PanelData.diff(stateHistory);
+		const covar = PanelData.covar(stateDiff);
+		numeric.muleq(covar, 250);
+		console.log('Realized factor covariance:');
+		console.log(numeric.prettyPrint(covar));
+		
+		// Compare the historical covariance with the model covariance.
+		const modelCovar = model.covariance();
+		let maxDiff = -Infinity;
+		for (let i = 0; i < covar.length; i++) {
+			for (let j = 0; j < covar[i].length; j++) {
+				maxDiff = Math.max(maxDiff, Math.abs(covar[i][j] - modelCovar[i][j]));
+			}
+		}
+		if (maxDiff < 1e-6) { // 0.1% tolerance on volatility
+			return;
+		}
+	
+		// Update model covariance and continue iteration.
+		modelCovar.length = 0;
+		modelCovar.push(...covar);
+	}
+	alert('Calibration failed to converge');
+	throw new Error('Calibration failed to converge');
+}
+
+namespace PanelData {
+	
+	//private data: any[][]; // [Array<string>, [Date,number ... ]];
+	
+	//constructor() {
+	//	this.data = [];
+	//}
+	
+	type DataTable = any[][];
+
+	/**
+	 * Returns periodic records from a data table.
+	 * @param frequency  Can be one of 'd', 'w', 'm', 'q', 'y'.
+	 */
+	export function periodic(table: DataTable, frequency: string): DataTable {
+		const numDates = table.length - 1;
+		const numSeries = table[0].length - 1;
+		const result = [table[0]];
+		for (let i = 1; i <= numDates; i++) {
+			let shouldKeep: boolean;
+			if (i == numDates) { // always keep the last observation
+				shouldKeep = true;
+			} else {
+				const thisDate = table[i][0];
+				const nextDate = table[i + 1][0];
+				if (frequency === 'w') { // weekly
+					shouldKeep = (nextDate.getDay() <= thisDate.getDay() ||
+						nextDate.getTime() - thisDate.getTime() >= 7 * 24 * 3600 * 1000);
+				} else if (frequency === 'm') { // monthly
+					shouldKeep = (thisDate.getFullYear() != nextDate.getFullYear() ||
+						thisDate.getMonth() != nextDate.getMonth());
+				} else if (frequency === 'q') { // quarterly
+					shouldKeep = (thisDate.getFullYear() != nextDate.getFullYear() ||
+						Math.floor(thisDate.getMonth() / 3) != Math.floor(nextDate.getMonth() / 3));
+				} else if (frequency === 's') { // semi-annually
+					shouldKeep = (thisDate.getFullYear() != nextDate.getFullYear() ||
+						Math.floor(thisDate.getMonth() / 6) != Math.floor(nextDate.getMonth() / 6));
+				} else if (frequency === 'y') { // annually
+					shouldKeep = (thisDate.getFullYear() != nextDate.getFullYear());
+				} else { // keep by default
+					shouldKeep = true;
+				}
+			}
+			if (shouldKeep)
+				result.push(table[i]);
+		}
+		return result;
+	}
+
+	export function sort(table: DataTable, acsending = true): DataTable {
+		const result = [...table];
+		const upperLeft = result[0][0];
+		result[0][0] = null;
+		result.sort(function(r1, r2) {
+			const k1 = r1[0], k2 = r2[0];
+			if (k1 instanceof Date && k2 instanceof Date)
+				return (k1.getTime() - k2.getTime()) * (acsending ? 1 : -1);
+			else if (k1 === null)
+				return -1;
+			else if (k2 === null)
+				return 1;
+			else
+				return 0;
+		});
+		result[0][0] = upperLeft;
+		return result;
+	}
+
+	export function columnIndex(table: DataTable, column: int | string): int {
+		if (typeof column === 'string') {
+			for (let i = 1; i < table[0].length; i++) {
+				if (table[0][i] === column)
+					return i;
+			}
+			return 0;
+		}
+		else {
+			return column;
+		}
+	}
+
+	export function getColumns(table: DataTable, columns: Array<int | string>): DataTable {
+		const columnIndices = [0, ...columns.map(c => columnIndex(table, c))];
+		const numDates = table.length - 1;
+		const result = new Array(1 + numDates);
+		for (var i = 0; i <= numDates; i++) {
+			result[i] = columnIndices.map(j => table[i][j]);
+		}
+		return result;
+	}
+
+	export function diff(table: DataTable, d = 1): DataTable {
+		const numDates = table.length - 1;
+		const numSeries = table[0].length - 1;
+		const result = [table[0]];
+		for (let i = 1; i <= numDates - d; i++) {
+			result[i] = [table[i][0]];
+			for (let j = 1; j <= numSeries; j++)
+				result[i][j] = table[i][j] - table[i + d][j];
+		}
+		return result;
+	}
+
+	export function scale(table: DataTable, factor = 1): void {
+		for (let i = 1; i < table.length; i++) {
+			for (let j = 1; j < table[i].length; j++) {
+				table[i][j] *= factor;
+			}
+		}
+	}
+
+	export function covar(table: DataTable): number[][] {
+		const nobs = table.length - 1;
+		const nvars = table[0].length - 1;
+
+		const C = new Array<Array<number>>(nvars);
+		for (let i = 0; i < nvars; i++) {
+			C[i] = new Array(nvars);
+		}
+
+		for (let i = 1; i <= nvars; i++) {
+			for (let j = i; j <= nvars; j++) {
+				let sumX = 0, sumY = 0, sumXY = 0, count = 0;
+				for (let k = 1; k <= nobs; k++) {
+					const x = table[i][k];
+					const y = table[j][k];
+					if (typeof x === 'number' && isFinite(x) &&
+						typeof y === 'number' && isFinite(y)) {
+						sumX += x;
+						sumY += y;
+						sumXY += x * y;
+						count += 1;
+					}
+				}
+				const c = (sumXY - sumX * sumY / count) / (count - 1); // unbiased?
+				C[i - 1][j - 1] = c;
+				C[j - 1][i - 1] = c;
+			}
+		}
+		return C;
+	}
+}
