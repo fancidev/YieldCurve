@@ -3,7 +3,7 @@
 interface SplineModelConstraint {
 	knotIndex: int;
 	derivOrder: int;
-	derivValue: number;
+	derivValue?: number;
 }
 
 /**
@@ -88,3 +88,42 @@ class SplineModel implements YieldCurveModel {
 		return df;
 	}
 }
+
+class SplineModelTemplate implements YieldCurveModelTemplate {
+
+	public name: string;
+	private degree: int;
+	private conditions: SplineModelConstraint[];
+
+	constructor(name: string, degree: int, conditions: SplineModelConstraint[]) {
+		this.name = name;
+		this.degree = degree;
+		this.conditions = conditions;
+	}
+
+	createModel(instruments: Instrument[]): YieldCurveModel {
+		return new SplineModel(instruments.map(maturity), this.degree, this.conditions);
+	}
+}
+
+const splineModelTemplates = [
+	new SplineModelTemplate('Linear Spline', 1, []),
+	new SplineModelTemplate('Quadratic Spline', 2, [
+		{ knotIndex: -1, derivOrder: 2 },
+	]),
+	new SplineModelTemplate('Natural Cubic Spline', 3, [
+		{ knotIndex: 0, derivOrder: 2 },
+		{ knotIndex: -1, derivOrder: 2 },
+	]),
+	new SplineModelTemplate('Quartic Spline', 4, [
+		{ knotIndex: 0, derivOrder: 2 },
+		{ knotIndex: -1, derivOrder: 3 },
+		{ knotIndex: -1, derivOrder: 2 },
+	]),
+	new SplineModelTemplate('Quintic', 5, [
+		{ knotIndex: 0, derivOrder: 2 },
+		{ knotIndex: -1, derivOrder: 4 },
+		{ knotIndex: -1, derivOrder: 3 },
+		{ knotIndex: -1, derivOrder: 2 },
+	])
+];

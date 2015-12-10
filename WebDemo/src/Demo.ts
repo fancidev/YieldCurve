@@ -73,38 +73,26 @@ namespace Demo {
 
 	type NamedInterpScheme = InterpScheme & { name: string };
 
-	export function drawYieldCurve(
-		dataPoints: DataPoint[], preset: NamedInterpScheme, createPlotInstrument = createSwap,
-		vasicekModel: VasicekModel = null) {
+	export function drawYieldCurve(dataPoints: DataPoint[], modelTemplate: YieldCurveModelTemplate, createPlotInstrument = createSwap) {
 
 		const n = dataPoints.length;
 		const Instrument = Swap; // Fra;
-		const instruments: Instrument[] = [];
-		const marketRates: number[] = [];
+		const instruments = new Array<Instrument>(n);
+		const marketRates = new Array<number>(n);
 		for (let i = 0; i < n; i++) {
 			instruments[i] = new Instrument(dataPoints[i].x);
 			marketRates[i] = dataPoints[i].y / 100;
 		}
 
 		// Build the yield curve.
-		/*
-		const model = new SplineModel(
-			instruments.map(instrument => instrument.maturity()),
-			preset.degree,
-			preset.conditions);
-		const discount = fitYieldCurve(model, instruments, marketRates);
-		*/
-		const fewerInstruments = new Array<Instrument>();
-		const fewerMarketRates = new Array<number>();
-		for (let i = 0; i < n; i++) {
-			const t = dataPoints[i].x;
-			if (t == 0.25 || t == 2 || t == 10 || t == 30) {
-				fewerInstruments.push(new Instrument(t));
-				fewerMarketRates.push(dataPoints[i].y / 100);
-			}
+		const usedInstruments = instruments.slice();
+		const model = modelTemplate.createModel(usedInstruments);
+		const usedMarketRates = marketRates.slice();
+		for (let i = usedMarketRates.length - 1; i >= 0; i--) {
+			if (usedInstruments.indexOf(instruments[i]) < 0)
+				usedMarketRates.splice(i, 1);
 		}
-		const model = vasicekModel ? vasicekModel : new VasicekModel(fewerInstruments.map(instrument => instrument.maturity()));
-		const discount = fitYieldCurve(model, fewerInstruments, fewerMarketRates);
+		const discount = fitYieldCurve(model, usedInstruments, usedMarketRates);
 		
 		// Display model info.
 		if (model.info) {
@@ -137,12 +125,11 @@ namespace Demo {
 		}
 		chart.options.data.push({
 			type: 'line',
-			name: '(' + preset.name + ' Spline)',
+			name: modelTemplate.name,
 			markerType: 'none',
 			showInLegend: true,
 			dataPoints: interpolatedPoints
 		});
-		//alert('Plotted');
 		
 		adjustYAxisLimits(chart);
 		chart.render();

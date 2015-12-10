@@ -107,3 +107,30 @@ class VasicekModel implements YieldCurveModel {
 		return s;
 	}
 }
+
+class VasicekModelTemplate implements YieldCurveModelTemplate {
+	public name: string;
+	private ts: number[];
+
+	constructor(ts: number[]) {
+		this.name = ts.length + '-factor Vasicek';
+		this.ts = ts.slice();
+	}
+
+	createModel(instruments: Instrument[]): YieldCurveModel {
+		for (let i = instruments.length - 1; i >= 0; i--) {
+			const t = instruments[i].maturity();
+			if (this.ts.indexOf(t) < 0)
+				instruments.splice(i, 1);
+		}
+		return new VasicekModel(instruments.map(maturity));
+	}
+}
+
+const vasicekModelTemplates = [
+	new VasicekModelTemplate([10]),
+	new VasicekModelTemplate([2, 10]),
+	new VasicekModelTemplate([2, 10, 30]),
+	new VasicekModelTemplate([0.25, 2, 10, 30]),
+	new VasicekModelTemplate([0.25, 2, 5, 10, 30]),
+];

@@ -48,9 +48,9 @@ function numCols(table: PanelData): int {
 	return table.colnames ? table.colnames.length : (table.length > 0) ? table[0].length : 0;
 }
 
-//	table.rowIndexOf = function(rowName: Date): int {
-//		return this.rownames.indexOf(rowName);
-//	};
+function getRowIndex(table: PanelData, rowName: Date): int {
+	return table.rownames.indexOf(rowName);
+}
 
 function getColumnIndex(table: PanelData, columnName: int | string): int {
 	if (typeof columnName === 'string') {

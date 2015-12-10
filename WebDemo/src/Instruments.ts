@@ -27,6 +27,14 @@ interface Instrument {
 	impliedRate(discount: Discount, gradient?: number[]): number;
 }
 
+/**
+ * Returns the maturity (in years) of an instrument. This is a
+ * helper function.
+ */
+function maturity(instrument: Instrument): number {
+	return instrument.maturity();
+}
+
 class Fra implements Instrument {
 
 	private _maturity: number;

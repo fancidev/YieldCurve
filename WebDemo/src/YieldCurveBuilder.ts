@@ -38,6 +38,28 @@ interface YieldCurveModel {
 }
 
 /**
+ * Represents a partially-specified yield curve model, where the
+ * only missing information is the instruments to fit to. Note
+ * that the model may not use all the supplied instruments.
+ */
+interface YieldCurveModelTemplate {
+	/**
+	 * Gets the name of the model template.
+	 */
+	name: string;
+	
+	/**
+	 * Creates a model that is ready to be fitted to market data.
+	 * @param instruments  The tentitative instruments to fit to.
+	 *                     If the model is not able to fit to all
+	 *                     the data exactly, it should delete the
+	 *                     instruments that it doesn't want to fit
+	 *                     from this array.
+	 */
+	createModel(instruments: Instrument[]): YieldCurveModel;
+}
+
+/**
  * Fits the given yield curve model to observed market rates of a
  * set of instruments. The number of instruments must be equal to
  * the number of internal state variables in the model.
