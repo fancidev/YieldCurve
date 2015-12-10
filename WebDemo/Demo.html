@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
@@ -102,9 +102,7 @@ $(function () {
 	var currentVasicekModel; // = new VasicekModel(instruments.map(maturity));
 	
 	$(document).ready(function () {
-				
-		refreshTermStructure();
-		
+						
 		// Set up Kendo UI.
 		$("#toolbar").kendoToolBar({
 			items: [
@@ -114,7 +112,7 @@ $(function () {
 				{ type: "separator" },
 				{ template: "<label><strong>Model:</strong></label>" },
 				{ template: "<input id='modelList' style='width: 150px;' />" },
-				{ type: "button", text: "Calibrate", click: doCalibration } ,
+				{ type: "button", id: "btnCalibrate", text: "Calibrate", click: doCalibration } ,
 				{ type: "separator" },
 				{ template: "<label><strong>Output:</strong></label>" },
 				{ template: "<input id='outputTypeList' style='width: 180px;' />" },
@@ -177,16 +175,26 @@ $(function () {
 				refreshTermStructure();
 			},
 		});
+		
+		// Draw initial layout.
+		refreshTermStructure();
 	});
 	
 	function refreshTermStructure()
 	{
+		var modelTemplate = modelTemplates[currentModelIndex];
 		Demo.drawYieldCurve(
 			getDemoDataPoints(currentDateIndex),
-			modelTemplates[currentModelIndex], 
+			modelTemplate, 
 			curveTypes[currentOutputIndex].create);
 		//Demo.drawBumpResponse(splinePresets[index]);
 		//Demo.drawBezierBasis(splinePresets[index]);
+		
+		// Enable calibration button if the model supports it.
+		var toolbar = $("#toolbar").data("kendoToolBar");
+		var btnCalibrate = $("#btnCalibrate");
+		var shouldEnable = modelTemplate.calibrate ? true : false;
+		toolbar.enable(btnCalibrate, shouldEnable);
 	}
 	
 	var curveTypes = [
@@ -270,9 +278,10 @@ $(function () {
 			new Swap(30)
 		];
 		
-		var model = new VasicekModel(instruments.map(maturity));
-		calibrateVasicek(model, instruments, panel);
-		currentVasicekModel = model;
+		var modelTemplate = modelTemplates[currentModelIndex];
+		if (modelTemplate.calibrate) {
+			modelTemplate.calibrate(instruments, panel);
+		}
 		refreshTermStructure();
 	}
 	
