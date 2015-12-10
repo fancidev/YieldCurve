@@ -18,7 +18,7 @@ module.exports = function(grunt) {
 			},
 			jqwidgets: {
 				cwd: 'bower_components/jqwidgets',
-				src: 'jqwidgets/*',
+				src: 'jqwidgets/**',
 				dest: 'scripts',
 				expand: true
 			}
