@@ -159,3 +159,28 @@ class Swap implements Instrument {
 		return swapRate;
 	}
 }
+
+/**
+ * Represents a partially-specified instrument, where the only piece
+ * of information missing is the maturity. Such a template is useful
+ * when plotting a curve of the given type.
+ */
+interface InstrumentTemplate {
+	/**
+	 * Gets the name of the instrument.
+	 */
+	name: string;
+		
+	/**
+	 * Creates an instrument of the given maturity.
+	 * @param maturity  Maturity (in years) of the instrument.
+	 */
+	createInstrument(maturity: number): Instrument;
+}
+
+var instrumentTemplates: InstrumentTemplate[] = [
+	{ name: 'Swap', createInstrument: (t) => new Swap(t) },
+	{ name: 'Zero Coupon', createInstrument: (t) => new Fra(t) },
+	{ name: 'Instantaneous Forward', createInstrument: (t) => new InstFwd(t) },
+	//{ name: 'Log Discount Factor', create: function (t) { return new LogDf(t);} },
+];

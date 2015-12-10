@@ -171,7 +171,7 @@ $(function () {
 		$("#outputTypeList").kendoDropDownList({
 			dataTextField: "name",
 			dataValueField: "index",
-			dataSource: curveTypes.map(function (c) {
+			dataSource: instrumentTemplates.map(function (c) {
 				index++;
 				return { name: c.name, index: index };
 			}),
@@ -210,7 +210,7 @@ $(function () {
 		Demo.drawYieldCurve(
 			getDemoDataPoints(currentDateIndex),
 			modelTemplate, 
-			curveTypes[currentOutputIndex].create);
+			instrumentTemplates[currentOutputIndex]);
 		//Demo.drawBumpResponse(splinePresets[index]);
 		//Demo.drawBezierBasis(splinePresets[index]);
 		
@@ -220,13 +220,6 @@ $(function () {
 		var shouldEnable = modelTemplate.calibrate ? true : false;
 		toolbar.enable(btnCalibrate, shouldEnable);
 	}
-	
-	var curveTypes = [
-		{ name: 'Swap', create: function (t) { return new Swap(t);} },
-		{ name: 'Zero Coupon', create: function (t) { return new Fra(t);} },
-		{ name: 'Log Discount Factor', create: function (t) { return new LogDf(t);} },
-		{ name: 'Instantaneous Forward', create: function (t) { return new InstFwd(t);} },
-	];
 	
 	var modelTemplates = splineModelTemplates.concat(vasicekModelTemplates);
 	

@@ -12,14 +12,6 @@ namespace Demo {
 		conditions: { knotIndex: int, derivOrder: int, derivValue: number }[];
 	}
 
-	type CreateInstrument = (maturity: number) => Instrument;
-
-	export function createSwap(t: number): Swap {
-		return new Swap(t);
-	}
-	
-	// export createInstrument<T extends Instrument>
-
 	function getTermStructureChart(): CanvasJS.Chart {
 		return $("#termStructureChart").CanvasJSChart();
 	}
@@ -73,7 +65,10 @@ namespace Demo {
 
 	type NamedInterpScheme = InterpScheme & { name: string };
 
-	export function drawYieldCurve(dataPoints: DataPoint[], modelTemplate: YieldCurveModelTemplate, createPlotInstrument = createSwap) {
+	export function drawYieldCurve(
+		dataPoints: DataPoint[],
+		modelTemplate: YieldCurveModelTemplate,
+		plotInstrumentTemplate: InstrumentTemplate) {
 
 		const n = dataPoints.length;
 		const Instrument = Swap; // Fra;
@@ -119,18 +114,18 @@ namespace Demo {
 		// const PlotInstrument = Swap; // InstFwd; // LogDf; // Swap; // LogDf;
 		const interpolatedPoints: DataPoint[] = [];
 		for (let t = 1 / 16; t <= dataPoints[n - 1].x; t += 1 / 16) {
-			const instrument = createPlotInstrument(t);
+			const instrument = plotInstrumentTemplate.createInstrument(t);
 			const impliedRate = instrument.impliedRate(discount);
 			interpolatedPoints.push({ x: t, y: impliedRate * 100 });
 		}
 		chart.options.data.push({
 			type: 'line',
-			name: modelTemplate.name,
+			name: plotInstrumentTemplate.name + ' Curve (' + modelTemplate.name + ')',
 			markerType: 'none',
 			showInLegend: true,
 			dataPoints: interpolatedPoints
 		});
-		
+
 		adjustYAxisLimits(chart);
 		chart.render();
 	}
