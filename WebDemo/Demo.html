@@ -7,13 +7,6 @@
   <script type="text/javascript" src="scripts/canvasjs.js"></script>
   <script type="text/javascript" src="scripts/jquery.canvasjs.js"></script>
   <script type="text/javascript" src="scripts/numeric.js"></script>
-
-  <script type="text/javascript" src="scripts/jqwidgets/jqxcore.js"></script>
-  <script type="text/javascript" src="scripts/jqwidgets/jqxbuttons.js"></script>
-  <script type="text/javascript" src="scripts/jqwidgets/jqxscrollbar.js"></script>
-  <script type="text/javascript" src="scripts/jqwidgets/jqxlistbox.js"></script>
-  <script type="text/javascript" src="scripts/jqwidgets/jqxdropdownlist.js"></script>
-  <link rel="stylesheet" href="scripts/jqwidgets/styles/jqx.base.css" type="text/css" />
   
   <script type="text/javascript" src="scripts/BSpline.js"></script>
   <script type="text/javascript" src="scripts/SplineModel.js"></script>
@@ -102,47 +95,33 @@ $(function () {
 
 	window.onerror = function () { return true; };
 
-	var currentModelIndex = 2;
-	var currentPlotInstrument = 0;
 	var currentDateIndex = demoData.length - 1;
+	var currentModelIndex = 2;
+	var currentOutputIndex = 0;
+	
 	var currentVasicekModel; // = new VasicekModel(instruments.map(maturity));
 	
 	$(document).ready(function () {
-		
-		$("#curveTypeList").jqxDropDownList({
-			source: curveTypes.map(function(ct){return ct.name;}), 
-			selectedIndex: currentPlotInstrument, 
-			width: 180, 
-			height: 20,
-			autoDropDownHeight: true,
-			animationType: 'none',
-		});
-		$("#curveTypeList").on('select', function (e) {
-			if (e && e.args) {
-				currentPlotInstrument = e.args.index;
-				refreshTermStructure();
-			}
-		});
-		
+				
 		refreshTermStructure();
 		
 		// Set up Kendo UI.
 		$("#toolbar").kendoToolBar({
 			items: [
-				{ template: "<label>Date:</label>" },
-				{ template: "<input id='frequencyDropDown' style='width: 100px;' />" },
+				{ template: "<label><strong>Data:</strong></label>" },
+				{ template: "<input id='frequencyList' style='width: 100px;' />" },
                                 { template: "<input id='dateList' style='width: 100px;' />" },
 				{ type: "separator" },
-				{ template: "<label>Method:</label>" },
+				{ template: "<label><strong>Model:</strong></label>" },
 				{ template: "<input id='modelList' style='width: 150px;' />" },
 				{ type: "button", text: "Calibrate", click: doCalibration } ,
 				{ type: "separator" },
-				{ template: "<label>Output:</label>" },
-				{ template: "<input id='outputTypeList' style='width: 150px;' />" },
+				{ template: "<label><strong>Output:</strong></label>" },
+				{ template: "<input id='outputTypeList' style='width: 180px;' />" },
 			]
 		});
 		
-		$("#frequencyDropDown").kendoDropDownList({
+		$("#frequencyList").kendoDropDownList({
 			dataTextField: "text",
 			dataValueField: "value",
 			dataSource: [
@@ -185,9 +164,18 @@ $(function () {
 			},
 		});
 		
+		index = -1;
 		$("#outputTypeList").kendoDropDownList({
 			dataTextField: "name",
-			dataSource: curveTypes
+			dataValueField: "index",
+			dataSource: curveTypes.map(function (c) {
+				index++;
+				return { name: c.name, index: index };
+			}),
+			change: function () {
+				currentOutputIndex = this.value();
+				refreshTermStructure();
+			},
 		});
 	});
 	
@@ -196,7 +184,7 @@ $(function () {
 		Demo.drawYieldCurve(
 			getDemoDataPoints(currentDateIndex),
 			modelTemplates[currentModelIndex], 
-			curveTypes[currentPlotInstrument].create);
+			curveTypes[currentOutputIndex].create);
 		//Demo.drawBumpResponse(splinePresets[index]);
 		//Demo.drawBezierBasis(splinePresets[index]);
 	}
@@ -288,21 +276,12 @@ $(function () {
 		refreshTermStructure();
 	}
 	
-	function maturity(instrument) {
-		return instrument.maturity();
-	}
-	
   </script>
 </head>
 
 <body>
   <div>
     <div id="toolbar"></div>
-    <div id="toolBar1" style="margin-bottom: 5px; padding:5px; border-width:1px; border-color:black; border-style:solid">
-      <div style="float: left">&nbsp;Curve:&nbsp;</div>
-      <div style="float: left" id="curveTypeList">[Curve Type List]</div>
-      <div>&nbsp;</div>
-    </div>
     <div id="termStructureChart" style="width:100%; height:300px; border-width:1px; border-style:solid; border-color:black">
       [Term Structure]
     </div>

@@ -19,6 +19,6 @@
   "dependencies": {
     "jquery": "1.11.3",
     "numeric-1.2.6": "http://www.numericjs.com/lib/numeric-1.2.6.js",
-    "jqwidgets": "*"
+    "kendo-ui": "kendo-ui-core#~2015.3.1201"
   }
 }
