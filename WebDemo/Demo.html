@@ -99,22 +99,20 @@ $(function () {
 	var currentModelIndex = 2;
 	var currentOutputIndex = 0;
 	
-	var currentVasicekModel; // = new VasicekModel(instruments.map(maturity));
-	
 	$(document).ready(function () {
 						
 		// Set up Kendo UI.
 		$("#toolbar").kendoToolBar({
 			items: [
-				{ template: "<label><strong>Data:</strong></label>" },
+				{ template: "<label><strong>DATA:</strong></label>" },
 				{ template: "<input id='frequencyList' style='width: 100px;' />" },
                                 { template: "<input id='dateList' style='width: 100px;' />" },
 				{ type: "separator" },
-				{ template: "<label><strong>Model:</strong></label>" },
+				{ template: "<label><strong>MODEL:</strong></label>" },
 				{ template: "<input id='modelList' style='width: 150px;' />" },
 				{ type: "button", id: "btnCalibrate", text: "Calibrate", click: doCalibration } ,
 				{ type: "separator" },
-				{ template: "<label><strong>Output:</strong></label>" },
+				{ template: "<label><strong>PLOT:</strong></label>" },
 				{ template: "<input id='outputTypeList' style='width: 180px;' />" },
 			]
 		});
@@ -128,7 +126,11 @@ $(function () {
 				{ text: 'Monthly', value: 'm' },
 				{ text: 'Quarterly', value: 'q' },
 				{ text: 'Yearly', value: 'y' }
-			]
+			],
+			change: function () {
+				var freq = this.value();
+				refreshTimeSeries(freq);
+			},
 		});
 		
 		var index = -1;
@@ -179,6 +181,25 @@ $(function () {
 		// Draw initial layout.
 		refreshTermStructure();
 	});
+	
+	function refreshTimeSeries(freq)
+	{
+		var usedData = periodic(demoData, freq);		
+		$("#dateList").kendoDropDownList({
+			dataTextField: "text",
+			dataValueField: "index",
+			dataSource: usedData.rownames.map(function(dt){
+				return {
+					text: CanvasJS.formatDate(dt,'YYYY-MM-DD'),
+					index: getRowIndex(demoData, dt)
+				};
+			}).reverse(),
+			change: function () {
+				currentDateIndex = this.value();
+				refreshTermStructure();
+			},
+		});
+	}
 	
 	function refreshTermStructure()
 	{
