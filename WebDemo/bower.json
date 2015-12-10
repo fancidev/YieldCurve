@@ -1,0 +1,24 @@
+{
+  "name": "YieldCurve",
+  "homepage": "https://github.com/fancidev/YieldCurve",
+  "authors": [
+    "fancidev <fancidev@gmail.com>"
+  ],
+  "description": "Yield curve demo",
+  "main": "Demo.html",
+  "moduleType": [],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "1.11.3",
+    "numeric-1.2.6": "http://www.numericjs.com/lib/numeric-1.2.6.js",
+    "jqwidgets": "*"
+  }
+}
