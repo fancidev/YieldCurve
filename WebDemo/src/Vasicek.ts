@@ -31,8 +31,8 @@ class VasicekModel implements YieldCurveModel {
 	private x: number[];
 	private wIsState: boolean;
 
-	constructor(ts: number[]) {
-		this.wIsState = false;
+	constructor(ts: number[], targetAsFactor = false) {
+		this.wIsState = targetAsFactor;
 
 		const n = this.wIsState ? ts.length - 1 : ts.length;
 		if (n < 1)
@@ -112,28 +112,43 @@ class VasicekModelTemplate implements YieldCurveModelTemplate {
 	public name: string;
 	private ts: number[];
 	private covar: number[][];
+	private targetAsFactor: boolean;
 
-	constructor(ts: number[]) {
+	constructor(ts: number[], targetAsFactor = false) {
 		const n = ts.length;
-		this.name = n + '-factor Vasicek';
 		this.ts = ts.slice();
-		this.covar = numeric.mul(0, numeric.identity(n));
+		this.targetAsFactor = targetAsFactor;
+		if (n === 0) { // adaptive
+			if (targetAsFactor)
+				this.name='n+1-factor Vasicek';
+			else
+				this.name = 'n-factor Vasicek';
+			this.covar = [];
+		} else {
+			this.name = n + '-factor Vasicek';
+			this.covar = numeric.mul(0, numeric.identity(n));
+		}
 	}
 
 	createModel(instruments: Instrument[]): VasicekModel {
-		for (let i = instruments.length - 1; i >= 0; i--) {
-			const t = instruments[i].maturity();
-			if (this.ts.indexOf(t) < 0)
-				instruments.splice(i, 1);
-		}
-		const model = new VasicekModel(instruments.map(maturity));
-		const covar = model.covariance();
-		for (let i = 0; i < covar.length; i++) {
-			for (let j = 0; j < covar.length; j++) {
-				covar[i][j] = this.covar[i][j];
+		if (this.ts.length === 0) { // adaptive
+			const model = new VasicekModel(instruments.map(maturity), this.targetAsFactor);
+			return model;
+		} else {
+			for (let i = instruments.length - 1; i >= 0; i--) {
+				const t = instruments[i].maturity();
+				if (this.ts.indexOf(t) < 0)
+					instruments.splice(i, 1);
 			}
+			const model = new VasicekModel(instruments.map(maturity), this.targetAsFactor);
+			const covar = model.covariance();
+			for (let i = 0; i < covar.length; i++) {
+				for (let j = 0; j < covar.length; j++) {
+					covar[i][j] = this.covar[i][j];
+				}
+			}
+			return model;
 		}
-		return model;
 	}
 	
 	/**
@@ -146,6 +161,11 @@ class VasicekModelTemplate implements YieldCurveModelTemplate {
 		const numSeries = numCols(marketRates);
 		if (numSeries !== instruments.length)
 			throw new RangeError('Instruments must match marketRates in size');
+
+		if (this.ts.length === 0) {
+			this.ts = instruments.map(maturity);
+			this.covar = numeric.mul(0, numeric.identity(this.ts.length));
+		}
 
 		for (let iter = 1; iter < 50; iter++) {
 		
@@ -201,6 +221,8 @@ class VasicekModelTemplate implements YieldCurveModelTemplate {
 }
 
 const vasicekModelTemplates = [
+	new VasicekModelTemplate([], false),
+	new VasicekModelTemplate([], true),
 	new VasicekModelTemplate([10]),
 	new VasicekModelTemplate([2, 10]),
 	new VasicekModelTemplate([2, 10, 30]),

@@ -120,9 +120,9 @@ const splineModelTemplates = [
 		{ knotIndex: -1, derivOrder: 3 },
 		{ knotIndex: -1, derivOrder: 2 },
 	]),
-	new SplineModelTemplate('Quintic', 5, [
+	new SplineModelTemplate('Quintic Spline', 5, [
 		{ knotIndex: 0, derivOrder: 2 },
-		{ knotIndex: -1, derivOrder: 4 },
+		{ knotIndex: 0, derivOrder: 3 },
 		{ knotIndex: -1, derivOrder: 3 },
 		{ knotIndex: -1, derivOrder: 2 },
 	])
