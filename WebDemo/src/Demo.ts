@@ -92,7 +92,7 @@ namespace Demo {
 		// Display model info.
 		if (model.info) {
 			$('#debugOutput').html(model.info());
-			$('#bumpResponseChart').css('display', 'none');
+			//$('#bumpResponseChart').css('display', 'none');
 		}
 		
 		// Plot it...
@@ -130,13 +130,15 @@ namespace Demo {
 		chart.render();
 	}
 
-	export function drawBumpResponse(preset: NamedInterpScheme) {
-		const dataPoints = defaultDataPoints;
+	export function drawBumpResponse(
+		dataPoints: DataPoint[],
+		modelTemplate: YieldCurveModelTemplate,
+		plotInstrumentTemplate: InstrumentTemplate) {
+		
 		const chart = getBumpResponseChart();
 		chart.options.data.length = 0;
 
 		const MarkInstrument = Swap;
-		const PlotInstrument = Swap;
 		
 		// Create instruments.
 		const n = dataPoints.length;
@@ -148,13 +150,20 @@ namespace Demo {
 		}
 
 		// Build the yield curve.
-		const ts = instruments.map(instrument => instrument.maturity());
-		const model = new SplineModel(ts, preset.degree, preset.conditions);
-		const baseCurve = fitYieldCurve(model, instruments, marketRates);
+		const usedInstruments = instruments.slice();
+		const model = modelTemplate.createModel(usedInstruments);
+		const usedMarketRates = marketRates.slice();
+		for (let i = usedMarketRates.length - 1; i >= 0; i--) {
+			if (usedInstruments.indexOf(instruments[i]) < 0)
+				usedMarketRates.splice(i, 1);
+		}
+		const baseCurve = fitYieldCurve(model, usedInstruments, usedMarketRates);
 
+		// Create plot instruments.
 		let plotInstruments = new Array<Instrument>();
-		for (let t = dataPoints[0].x; t <= dataPoints[n - 1].x; t += 1 / 16) {
-			plotInstruments.push(new PlotInstrument(t));
+		for (let t = 1 / 16; t <= dataPoints[n - 1].x; t += 1 / 16) {
+			const instrument = plotInstrumentTemplate.createInstrument(t);
+			plotInstruments.push(instrument);
 		}
 		
 		// Make base output curve.
@@ -165,11 +174,16 @@ namespace Demo {
 		}
 		
 		// Bump each marking input and rebuild the curve.
-		for (let i = 0; i < instruments.length; i++) {
-			const bumpedMarketRates = marketRates.slice();
-			bumpedMarketRates[i] += 0.01;
-			// Note: we are starting from the previous calibrated state
-			const bumpedCurve = fitYieldCurve(model, instruments, bumpedMarketRates);
+		for (let i = 0; i < usedInstruments.length; i++) {
+			const bumpedMarketRates = usedMarketRates.slice();
+			bumpedMarketRates[i] += 0.001; // 10 bp
+			// Uncomment the following to start from a fresh state.
+			// Leave it commented to start from the previously-fitted
+			// state. Usually this doesn't make a difference, but
+			// n-factor Vasicek fails to fit for some bumps under either
+			// methods.
+			// const model = modelTemplate.createModel(usedInstruments);
+			const bumpedCurve = fitYieldCurve(model, usedInstruments, bumpedMarketRates);
 			let bumpedOutput = new Array<number>();
 			for (const instrument of plotInstruments) {
 				const impliedRate = instrument.impliedRate(bumpedCurve);
@@ -177,14 +191,14 @@ namespace Demo {
 			}
 
 			const diff = numeric.sub(bumpedOutput, baseOutput);
-			numeric.muleq(diff, 100);
+			numeric.muleq(diff, 1000);
 
 			chart.options.data.push({
 				type: 'line',
 				name: dataPoints[i].x + 'Y',
 				markerType: 'none',
 				showInLegend: true,
-				dataPoints: zipXY(plotInstruments.map(instrument => instrument.maturity()), diff)
+				dataPoints: zipXY(plotInstruments.map(maturity), diff)
 			});
 		}
 		//adjustYAxisLimits(chart);

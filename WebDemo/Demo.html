@@ -98,7 +98,7 @@ $(function () {
 	window.onerror = function () { return true; };
 
 	var currentDateIndex = demoData.length - 1;
-	var currentModelIndex = 2;
+	var currentModelIndex = 0;
 	var currentOutputIndex = 0;
 	
 	$(document).ready(function () {
@@ -211,7 +211,11 @@ $(function () {
 			getDemoDataPoints(currentDateIndex),
 			modelTemplate, 
 			instrumentTemplates[currentOutputIndex]);
-		//Demo.drawBumpResponse(splinePresets[index]);
+		Demo.drawBumpResponse(
+			getDemoDataPoints(currentDateIndex),
+			modelTemplate, 
+			instrumentTemplates[currentOutputIndex]);
+
 		//Demo.drawBezierBasis(splinePresets[index]);
 		
 		// Enable calibration button if the model supports it.
