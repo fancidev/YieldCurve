@@ -15,14 +15,11 @@ module.exports = function(grunt) {
 					{ src: 'src/jquery.canvasjs.js', dest: 'scripts/jquery.canvasjs.js' },
 					{ src: 'src/canvasjs-1.8.0-beta4-mod.js', dest: 'scripts/canvasjs.js' }
 				]
+			},
+			zingchart: {
+				src: 'bower_components/zingchart/client/zingchart.min.js',
+				dest: 'scripts/zingchart.min.js'
 			}
-			//,
-			//jqwidgets: {
-			//	cwd: 'bower_components/jqwidgets',
-			//	src: 'jqwidgets/**',
-			//	dest: 'scripts',
-			//	expand: true
-			//}
 		},
 		clean: [ 'scripts' ]
 	});

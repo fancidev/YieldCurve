@@ -8,6 +8,8 @@
   <script type="text/javascript" src="scripts/jquery.canvasjs.js"></script>
   <script type="text/javascript" src="scripts/numeric.js"></script>
   
+  <script src="scripts/zingchart.min.js"></script>
+  
   <script type="text/javascript" src="scripts/BSpline.js"></script>
   <script type="text/javascript" src="scripts/SplineModel.js"></script>
   <script type="text/javascript" src="scripts/Vasicek.js"></script>
@@ -182,6 +184,7 @@ $(function () {
 		});
 		
 		// Draw initial layout.
+		refreshTimeSeries();
 		refreshTermStructure();
 	});
 	
@@ -201,6 +204,41 @@ $(function () {
 				currentDateIndex = this.value();
 				refreshTermStructure();
 			},
+		});
+		
+		// Redraw the time series chart.
+		var chartData = {
+			type: "line",
+			series: [],
+			crosshairX: {
+				lineWidth: 1,
+				marker: {
+					size: 4,
+					type: "circle",
+					borderColor: "#fff",
+					borderWidth: 1
+				}
+			},
+			legend: {
+				align: 'left',
+				verticalAlign: 'middle'
+			}
+		};
+		for (var j = 0; j < numCols(usedData); j++) {
+			var seriesData = [];
+			for (var i = 0; i < numRows(usedData); i++) {
+				seriesData[i] = usedData[i][j];
+			}
+			chartData.series.splice(0, 0, {
+				values: seriesData,
+				text: usedData.colnames[j],
+			});
+		}
+		zingchart.render({
+			id: 'timeSeriesChart',
+			data: chartData,
+			//height: 150,
+			//width:"100%"
 		});
 	}
 	
@@ -269,19 +307,7 @@ $(function () {
 		}
 		return dataPoints;
 	}
-	
-	var defaultDataPoints = [
-		{ x: 0.25, y: 5.39 },
-		{ x: 1, y: 5.39 },
-		{ x: 2, y: 5.21 },
-		{ x: 3, y: 5.16 },
-		{ x: 4, y: 5.16 },
-		{ x: 5, y: 5.18 },
-		{ x: 7, y: 5.23 },
-		{ x: 10, y: 5.29 },
-		{ x: 30, y: 5.41 }
-	];	
-	
+		
 	function doCalibration() {
 		//alert('calibrate');
 		
@@ -310,8 +336,10 @@ $(function () {
 </head>
 
 <body>
-  <div style="width: 800px; margin: 0 auto;">
+  <!--<div style="width: 800px; margin: 0 auto;">-->
+  <div>
     <div id="toolbar"></div>
+    <div id="timeSeriesChart" style="width:100%; height: 300px;"></div>
     <div id="termStructureChart" style="height:300px; margin: 2px; border-width:1px; border-style:solid; border-color:gray">
       [Term Structure]
     </div>
