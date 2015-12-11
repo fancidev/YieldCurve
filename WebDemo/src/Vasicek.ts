@@ -64,7 +64,7 @@ class VasicekModel implements YieldCurveModel {
 		const k = this.k;
 		const C = this.C;
 		const x = this.x;
-		const w = this.wIsState ? x[n] : 0.0275;
+		const w = this.wIsState ? x[n] : 0; // 0.0275;
 
 		// TODO: optimize calculation
 		let A = 0;
@@ -119,13 +119,10 @@ class VasicekModelTemplate implements YieldCurveModelTemplate {
 		this.ts = ts.slice();
 		this.targetAsFactor = targetAsFactor;
 		if (n === 0) { // adaptive
-			if (targetAsFactor)
-				this.name='n+1-factor Vasicek';
-			else
-				this.name = 'n-factor Vasicek';
+			this.name = (targetAsFactor ? 'n+1' : 'n') + '-factor Vasicek';
 			this.covar = [];
 		} else {
-			this.name = n + '-factor Vasicek';
+			this.name = (targetAsFactor ? (n - 1) + '+1' : n) + '-factor Vasicek';
 			this.covar = numeric.mul(0, numeric.identity(n));
 		}
 	}
@@ -227,5 +224,6 @@ const vasicekModelTemplates = [
 	new VasicekModelTemplate([2, 10]),
 	new VasicekModelTemplate([2, 10, 30]),
 	new VasicekModelTemplate([0.25, 2, 10, 30]),
+	new VasicekModelTemplate([0.25, 2, 10, 30], true),
 	new VasicekModelTemplate([0.25, 2, 5, 10, 30]),
 ];
