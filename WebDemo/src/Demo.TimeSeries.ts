@@ -145,11 +145,14 @@ class TimeSeriesChart {
 	}
 
 	private onClickLegend(e: CanvasJS.ChartEvent) {
-		if (e.dataSeries.visible === false) {
-			e.dataSeries.visible = true;
-		} else {
-			e.dataSeries.visible = false;
-		}
+		const dataSeriesIndex = e.dataSeriesIndex;
+		// Because a dummy series is created for each real series,
+		// we need to hide both series (one for the lines and one
+		// for the legend).
+		const allSeries = e.chart.options.data;
+		const visible = (e.dataSeries.visible === false);
+		e.dataSeries.visible = visible;
+		allSeries[dataSeriesIndex - (allSeries.length - 1) / 2].visible = visible;
 		e.chart.render();
 	}
 

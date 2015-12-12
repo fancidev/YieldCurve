@@ -238,7 +238,10 @@ namespace Demo {
 		maxY = Math.ceil((maxY + margin) / roundTo) * roundTo;
 		chart.options.axisY.minimum = minY;
 		chart.options.axisY.maximum = maxY;
-		
+		if (chart.options.axisY2) {
+			chart.options.axisY2.minimum = minY;
+			chart.options.axisY2.maximum = maxY;			
+		}
 		// Note: the caller must call chart.render() to take effect.
 		// chart.render();
 	}
