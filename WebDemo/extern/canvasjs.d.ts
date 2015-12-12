@@ -162,7 +162,7 @@ declare module CanvasJS {
         /** 
         * Title allows you to set content, appearance and position of Chart’s Title.
         */
-        title: ChartTitleOptions;
+        title?: ChartTitleOptions;
         /** 
         * Whenever the chart contains multiple dataSeries, it is recommended to represent each dataSeries in a legend. This way it becomes easier for the user to know what exactly is represented by each of the dataSeries. In case of Pie and Doughnut charts, an entry is created for each dataPoint and in rest of the chart types entries are created for each dataSeries.
         * You can selectively show or hide a dataSeries in the Legend using showInLegend property of dataSeries.
@@ -176,6 +176,7 @@ declare module CanvasJS {
         * axisY object lets you set various parameters of Y Axis like interval, grid lines, etc. It is mostly vertical, except when we are working with Bar Charts, where axisY is horizontal.
         */
         axisY?: ChartAxisYOptions;
+        axisY2?: ChartAxisYOptions;
         /** 
         * toolTip object lets user set behaviour of toolTip at global level like enabling/disabling animation, setting Border Color, sharing toolTip between multiple dataSeries, etc. You can also disable the toolTip by setting enabled property to false.
         */
@@ -184,6 +185,10 @@ declare module CanvasJS {
         * data is an array of dataSeries Objects.
         */
         data: ChartDataOptions[];
+
+        dataPointWidth?: number;
+        dataPointMinWidth?: number;
+        dataPointMaxWidth?: number;
     }
 
     interface ChartTitleOptions {
@@ -343,6 +348,8 @@ declare module CanvasJS {
         * @param event a chart event
         */
         itemclick?: (event: ChartEvent) => void;
+
+        reversed?: boolean;
     }
 
     interface ChartEvent {
@@ -525,7 +532,7 @@ declare module CanvasJS {
         * Default: 2 
         * Example: 2, 4.. 
         */
-        lineThickness?: string;
+        lineThickness?: int;
         /** 
         * Sets the Interlacing Color that alternates between the set interval. If the interval is not set explicitly, then the auto calculated interval is considered. The value of interlacedColor can be a "HTML Color Name" or "hex" code .
         * Default: null 
@@ -560,16 +567,18 @@ declare module CanvasJS {
         * In the case you set startValue and endValue attributes, value and thickness attributes are ignored (as either a single thread of line can exist, or a shaded region between two given points). 
         * Strip Lines can be displayed using AxisX or AxisY’s stripLines array. This allows you to have one or more strip lines on both x & y axis. 
         */
-        stripLines?: ChartStripLines;
+        stripLines?: ChartStripLine[];
+
+        gridDashType?: string;
     }
 
-    interface ChartStripLines {
+    interface ChartStripLine {
         /** 
         * Sets the point where the stripLine has to be plotted or drawn along the axis X.
         * Default: null
         * Example: 20,30,100,50 
         */
-        value?: number;
+        value?: number | Date;
         /** 
         * Sets the point where the stripLine’s shaded region begins on the x-axis.
         * Default: null
@@ -677,6 +686,14 @@ declare module CanvasJS {
         * Example: "red", "#808080".. 
         */
         borderColor?: string;
+
+        fontStyle?: string;
+        fontSize?: number;
+        fontFamily?: string;
+        backgroundColor?: string;
+        borderThickness?: number;
+        cornerRadius?: number;
+        contentFormatter?: (e: any) => string;
     }
 
     interface ChartDataCommon {
@@ -932,6 +949,10 @@ declare module CanvasJS {
         * It represents collection dataPoint inside dataSeries .
         */
         dataPoints: ChartDataPoint[];
+
+        highlightColor?: string;
+        highlightOpacity?: number;
+        highlightEnabled?: boolean;
     }
 
     interface ChartDataPoint extends ChartDataCommon {
@@ -947,7 +968,7 @@ declare module CanvasJS {
         * Default: null 
         * Example: 5, 20, -30 ..
         */
-        y?: number;
+        y?: number | [number, number];
         /** 
         * Sets the z value of dataPoint. It is only applicable in case of Bubble chart. This value determines the size of the bubble.
         * Default: 1 

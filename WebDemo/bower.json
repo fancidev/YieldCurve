@@ -19,7 +19,6 @@
   "dependencies": {
     "jquery": "1.11.3",
     "numeric-1.2.6": "http://www.numericjs.com/lib/numeric-1.2.6.js",
-    "kendo-ui": "kendo-ui-core#~2015.3.1201",
-    "zingchart": "~2.2.1"
+    "kendo-ui": "kendo-ui-core#~2015.3.1201"
   }
 }

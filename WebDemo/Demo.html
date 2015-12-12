@@ -14,7 +14,9 @@
   <script type="text/javascript" src="scripts/YieldCurveBuilder.js"></script>
   <script type="text/javascript" src="scripts/Instruments.js"></script>
   <script type="text/javascript" src="scripts/PanelData.js"></script>
+  
   <script type="text/javascript" src="scripts/DemoData.js"></script>
+  <script src="scripts/Demo.TimeSeries.js"></script>
   <script type="text/javascript" src="scripts/Demo.js"></script>
   
   <link rel="stylesheet" href="bower_components/kendo-ui/styles/kendo.common.min.css" />
@@ -33,113 +35,10 @@
 </style>
   
   <script type="text/javascript">
+  var timeSeriesChart;
 $(function () {
 	
-	CanvasJS.addColorSet("office", [
-		'#29A2CC',
-		'#D31E1E',
-		'#7CA82B',
-		'#EF8535',
-		'#A14BC9',
-		'#A05F18',
-		'#265E96',
-		'#6B7075',
-		'#96C245'
-	]);
-	
-	$("#timeSeriesChart").CanvasJSChart({
-		colorSet: 'office',
-		toolTip: {
-			shared: true,
-			animationEnabled: false, 
-			enabled: true,
-			fontStyle: 'normal',
-			fontSize: 12,
-			fontFamily: 'Arial',
-			//reversed: true,
-			backgroundColor: 'rgba(255,255,255,1.0)', // 'white', // '#F8F8F8',
-			borderThickness: 1,
-			cornerRadius: 0,
-			borderColor: 'gray',
-			contentFormatter: function (e) {
-				var content = '<strong>' + CanvasJS.formatDate(e.entries[0].dataPoint.x, 'YYYY-MM-DD') + '</strong><hr/>';
-				content += '<table cellspacing="0" cellpadding="0">';
-				for (var i = e.entries.length - 2; i >= 0; i--) {
-					content += '<tr><td style="text-align: right; color: ';
-					content += e.entries[i].dataSeries.color;
-					content += '">';
-					content += e.entries[i].dataSeries.name;
-					content += '</td><td>&nbsp;&nbsp;';
-					content += e.entries[i].dataPoint.y;
-					content += '</td></tr>';
-				}
-				content += '</table>';
-				return content;
-			}
-		},
-		dataPointMinWidth: 3,
-		legend: { 
-			horizontalAlign: 'center', 
-			verticalAlign: 'top', 
-			fontSize: 11,
-			fontFamily: 'Arial',
-			fontWeight: 'normal',
-			cursor: 'pointer',
-			reversed: false,
-			itemclick: function (e) { toggleVisibility(e.dataSeries); e.chart.render(); }
-		},
-		axisX: {
-			valueFormatString: 'YYYY-MM-DD',
-			labelFontFamily: 'Arial',
-			labelFontSize: 12,
-			labelFontColor: 'black',
-			gridThickness: 1,
-			gridColor: 'lightgray',
-			gridDashType: 'dash',
-			stripLines: [{
-				labelBackgroundColor: '#444444',
-				labelFormatter: function (e) { return CanvasJS.formatDate(e.stripLine.value, 'DD-MMM-YYYY'); }
-			}],
-			tickThickness: 1,
-			tickColor: 'gray',
-			tickLength: 5,
-			lineThickness: 1,
-			lineColor: 'gray',
-		},
-		axisY: {
-			tickThickness: 1,
-			tickColor: 'gray',
-			lineThickness: 1,
-			lineColor: 'gray',
-			gridThickness: 1,
-			labelFontColor: 'black',
-			gridColor: 'lightgray',
-			gridDashType: 'dash',
-			labelFontFamily: 'Arial',
-			labelFontSize: 12,
-			interval: 2,
-			//labelFormatter: function (e) { return CanvasJS.formatNumber(e.value, '0.00'); }
-		},
-		axisY2: {
-			tickThickness: 1,
-			tickColor: 'gray',
-			lineThickness: 1,
-			lineColor: 'gray',
-			gridThickness: 1,
-			gridColor: 'lightgray',
-			gridDashType: 'dash',
-			labelFontFamily: 'Arial',
-			labelFontSize: 12,
-			labelFontColor: 'black',
-			interval: 2,
-			//labelFormatter: function (e) { return CanvasJS.formatNumber(e.value, '0.00'); }
-		},
-		zoomEnabled: false,
-		width: 790,
-		height: 200,
-		data: [],
-		dataTable: undefined // filled by drawTimeSeries
-	});
+	timeSeriesChart = new TimeSeriesChart('timeSeriesChart');
 	
 	$("#termStructureChart").CanvasJSChart({
 		title: {
@@ -289,15 +188,17 @@ $(function () {
 			},
 		});
 		
+		timeSeriesChart.onSelectionChanged(function (dates) {
+			if (dates) {
+				var selectedDate = dates[0];
+				currentDateIndex = getRowIndex(demoData, selectedDate);
+				refreshTermStructure();
+			}
+		});
+	
 		// Draw initial layout.
 		refreshTimeSeries('m');
 		refreshTermStructure();
-		
-		// Hook keyboard events.
-		$("#timeSeriesChart")
-			.attr('tabindex', '0')
-			.keydown(timeSeriesChart_onKeyDown)
-			.mousedown(timeSeriesChart_onMouseDown);
 	});
 	
 	function refreshTimeSeries(freq)
@@ -318,72 +219,10 @@ $(function () {
 			},
 		});
 		
-		var chart = $("#timeSeriesChart").CanvasJSChart();
-		chart.options.data.length = 0;
-		for (var j = 0; j < numCols(usedData); j++) {
-			var series = { 
-				type: 'line',
-				name: usedData.colnames[j],
-				markerType: 'circle',
-				//legendMarkerType: 'square',
-				highlightEnabled: true,
-				showInLegend: false,
-				dataPoints: [],
-				axisYType: (j % 2 === 0)? "primary" : "secondary",
-				click: onClickTimeSeries,
-				focusable: true // ???
-			};
-			for (var i = 0; i < numRows(usedData); i++) {
-				series.dataPoints[i] = {
-					x: usedData.rownames[i],
-					y: usedData[i][j]
-				};
-			}
-			chart.options.data.push(series);
-		}
-		
-		// Add dummy series simply for the pretty legends
-		for (var j = 0; j < numCols(usedData); j++) {
-			var series = { 
-				type: 'scatter',
-				name: '\u2007' + usedData.colnames[j],
-				markerType: 'square',
-				//markerSize: 10,
-				highlightEnabled: true,
-				showInLegend: true,
-				dataPoints: [],
-				axisYType: (j % 2 === 0)? "primary" : "secondary",
-				//click: onClickTimeSeries,
-			};
-			chart.options.data.push(series);
-		}
-		
-		Demo.adjustYAxisLimits(chart, 1.0);
-
-		// Add a background column chart to catch click event. // use as indicator.
-		var backgroundSeries = {
-			type: "rangeColumn",
-			//color: "#B0D0B0",
-			color: 'transparent',
-			highlightColor: 'gray',
-			//highlightColor: 'orange',
-			highlightOpacity: 0.5,
-			showInLegend: false,
-			toolTipContent: null,
-			click: onClickTimeSeries,
-			dataPoints: []
-		};
-		var yRange = [ chart.options.axisY.minimum, chart.options.axisY.maximum ];
-		for (var i = 0; i < numRows(usedData); i++) {
-			backgroundSeries.dataPoints.push({
-				x: usedData.rownames[i], y: yRange
-			});
-		}
-		chart.options.data.push(backgroundSeries);
-		
-		chart.render();
+		timeSeriesChart.setData(usedData);
 	}
 	
+	/*
 	function onClickTimeSeries(e)
 	{
 		// Select the clicked date.
@@ -392,143 +231,7 @@ $(function () {
 		refreshTermStructure();
 		setSelection([currentDateIndex]);
 	}
-	
-	/*
-	var timeSeriesChart_guidePosition = null; // Date
-	
-	function timeSeriesChart_onGuideMove(e) {
-		if (e.items && e.items.length > 0) {
-			var date = new Date(e.items[0].keyvalue);
-			$('#debugOutput').text(date);
-			timeSeriesChart_guidePosition = date;
-		} else {
-			alert('guide move where?');
-		}
-	}
-	
-	function timeSeriesChart_onClick(e) {
-		//var info = zingchart.exec('timeSeriesChart', 'getxyinfo', { x: e.x, y: e.y });
-		if (timeSeriesChart_guidePosition) {
-			//alert('Click on date ' + timeSeriesChart_guidePosition);
-			var renderMode = zingchart.exec('timeSeriesChart', 'getrender');
-			alert('Render mode: ' + renderMode);
-		}
-		$('#timeSeriesChart').focus();
-	}
 	*/
-	
-	function timeSeriesChart_onMouseDown(e) {
-		$('#timeSeriesChart').focus();
-	}
-	
-	function timeSeriesChart_onKeyDown(e) 
-	{
-		var chart = $('#timeSeriesChart').CanvasJSChart();
-		var table = demoData;
-		//var table = chart.dataTable; // our attached property
-		//if (table.length <= 1) // no observations
-		//	return;
-		
-		// Left, Right, Home, End: select a single item 
-		/// Ctrl+L/R/H/E: moves selection in parallel
-		/// Shift+L/R/H/E: select a range of items
-		/// For a list of keycodes, see https://api.jquery.com/keydown/
-		var selection;
-		switch (e.which) {
-			case 37: // left arrow
-				selection = getSelection();
-				if (selection.length == 0) {
-					selection = [numRows(table) - 1];
-				} else if (selection[0] > 0) {
-					//if (e.shiftKey) { // TBD: doesn't work well
-					//	selection.push(selection[0]-1);
-					//} else if (e.ctrlKey) {
-					//	for (var i = 0; i < selection.length; i++)
-					//		--selection[i];
-					//} else {
-						selection = [selection[0] - 1];
-					//}
-				}
-				setSelection(selection);
-				break;
-			case 39: // right arrow
-				$('#debugOutput').text('Right');
-		/*		selection = getSelectedIndices();
-				if (selection.length == 0) {
-					selection = [1];
-				} else if (selection[selection.length-1] < table.length-1) {
-					if (e.shiftKey) { // TBD: doesn't work well
-						selection.push(selection[selection.length-1]+1);
-					} else if (e.ctrlKey) {
-						for (var i = 0; i < selection.length; i++)
-							++selection[i];
-					} else {
-						selection = [selection[selection.length-1]+1];
-					}
-				}
-				setSelectedIndices(selection);
-		*/		break;
-			case 36: // home
-				if (table.length > 0) {
-					setSelection([0]);
-				}
-				break;
-			case 35: // end
-				if (table.length > 0) {
-					setSelection([table.length - 1]);
-				}
-				break;
-		}
-	}
-	
-	// Returns an array of (zero-based) indices of selected dates
-	// in the time series chart.
-	function getSelection()
-	{
-		var chart = $('#timeSeriesChart').CanvasJSChart();
-		var stripLines = chart.options.axisX.stripLines;
-		var indices = [];
-		for (var i = 0; i < stripLines.length; i++) {
-			indices.push(stripLines[i].index);
-		}
-		//indices.sort();
-		return indices;
-	}
-
-	function setSelection(indices)
-	{
-		indices.sort(function (a,b) { return a-b; });
-		
-		// Draw a vertical line across the chart to highlight the selected dates.
-		var chart = $('#timeSeriesChart').CanvasJSChart();
-		var table = demoData;
-		var dates = table.rownames;
-		var stripLines = chart.options.axisX.stripLines;
-		stripLines.length = 0;
-		for (var i = 0; i < indices.length; i++) {
-			var dt = dates[indices[i]];
-			stripLines.push({
-				index: indices[i],
-				value: dt,
-				label: ' ' + CanvasJS.formatDate(dt, 'YYYY-MM-DD') + ' ',
-				//labelBackgroundColor: '#444444'
-				//label: '▲',
-				color: 'red',
-				thickness: 1,
-				labelFontColor: 'white',
-				labelBackgroundColor: '#666666',
-			});
-		}
-		chart.render();
-		
-		// Plot the term structure of the selected dates on a separate chart.
-		//var filtered = [table[0]];
-		//indices.sort();
-		//for (var i = 0; i < indices.length; i++) {
-		//	filtered.push(table[indices[i]]);
-		//}
-		//drawTermStructure(filtered);
-	}
 	
 	function refreshTermStructure()
 	{
@@ -552,29 +255,6 @@ $(function () {
 	}
 	
 	var modelTemplates = splineModelTemplates.concat(vasicekModelTemplates);
-	
-	/*
-	function getDemoDataPoints(index) {
-		var header = demoData[0].slice();
-		var n = header.length - 1;
-		for (var i = 1; i <= n; i++) {
-			var unit = header[i].substring(header[i].length - 1);
-			var count = parseInt(header[i].substring(0, header[i].length - 1));
-			if (unit === 'M')
-				count /= 12;
-			header[i] = count;
-		}
-		
-		var row = demoData[index];
-		var dataPoints = [];
-		for (var i = 1; i <= n; i++) {
-			var x = header[i];
-			var y = row[i];
-			dataPoints.push({ x: x, y: y });
-		}
-		return dataPoints;
-	}
-	*/
 	
 	function getDemoDataPoints(index) {
 		var header = demoData.colnames.slice();

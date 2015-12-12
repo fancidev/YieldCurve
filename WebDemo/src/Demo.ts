@@ -134,7 +134,7 @@ namespace Demo {
 		dataPoints: DataPoint[],
 		modelTemplate: YieldCurveModelTemplate,
 		plotInstrumentTemplate: InstrumentTemplate) {
-		
+
 		const chart = getBumpResponseChart();
 		chart.options.data.length = 0;
 
@@ -225,8 +225,10 @@ namespace Demo {
 			const dataPoints = data[i].dataPoints;
 			for (let j = 0; j < dataPoints.length; j++) {
 				const value = dataPoints[j].y;
-				minY = Math.min(minY, value);
-				maxY = Math.max(maxY, value);
+				if (typeof value === 'number') {
+					minY = Math.min(minY, value);
+					maxY = Math.max(maxY, value);
+				}
 			}
 		}
 		
