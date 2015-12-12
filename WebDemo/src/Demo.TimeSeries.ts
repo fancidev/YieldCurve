@@ -215,7 +215,11 @@ class TimeSeriesChart {
 			case 27: // ESC
 				this.setSelectedIndices([]);
 				break;
+			default:
+				return;
 		}
+		e.stopPropagation();
+		e.preventDefault();
 	}
 	
 	// Returns an array of (zero-based) indices of selected dates
