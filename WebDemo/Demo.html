@@ -256,6 +256,14 @@ $(function () {
 	
 	var modelTemplates = splineModelTemplates.concat(vasicekModelTemplates);
 	
+	function getMaturityInYears(mat) {
+		var unit = mat.substring(mat.length - 1);
+		var count = parseInt(mat.substring(0, mat.length - 1));
+		if (unit === 'M')
+			count /= 12;
+		return count;
+	}
+		
 	function getDemoDataPoints(index) {
 		var header = demoData.colnames.slice();
 		for (var i = 0; i < header.length; i++) {
@@ -276,26 +284,20 @@ $(function () {
 		return dataPoints;
 	}
 		
-	function doCalibration() {
-		//alert('calibrate');
-		
+	function doCalibration() {		
 		var panel = demoData;
-		panel = getColumns(panel, ['3M','2Y','10Y','30Y']);
 		panel = panel.slice(currentDateIndex - 100, currentDateIndex); // last 100 days of data
-		//panel = panel.slice(panel.length - 100); // last 100 days of data
-		//alert('Calibrating from ' + panel.rownames[0] + ' to ' + panel.rownames[panel.rownames.length - 1]);
 		panel = scale(panel, 0.01);
 		
-		var instruments = [
-			new Swap(0.25),
-			new Swap(2),
-			new Swap(10),
-			new Swap(30)
-		];
+		var ts = panel.colnames.map(getMaturityInYears);
+		var instruments = ts.map(function(t){return new Swap(t);});
 		
 		var modelTemplate = modelTemplates[currentModelIndex];
 		if (modelTemplate.calibrate) {
-			modelTemplate.calibrate(instruments, panel);
+			try {
+				modelTemplate.calibrate(instruments, panel);
+			} catch (error) {
+			}
 		}
 		refreshTermStructure();
 	}

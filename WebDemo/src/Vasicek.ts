@@ -168,9 +168,15 @@ class VasicekModelTemplate implements YieldCurveModelTemplate {
 		
 			// Fit the model to historical data to get state vector time series.
 			const stateHistory: PanelData = new Array<Array<number>>();
-			const model = this.createModel(instruments);
+			const usedInstruments = instruments.slice();
+			const model = this.createModel(usedInstruments);
 			for (let i = 0; i < numDates; i++) {
-				fitYieldCurve(model, instruments, marketRates[i]);
+				const usedMarketRates = marketRates[i].slice();
+				for (let j = usedMarketRates.length - 1; j >= 0; j--) {
+					if (usedInstruments.indexOf(instruments[j]) < 0)
+						usedMarketRates.splice(j, 1);
+				}
+				fitYieldCurve(model, usedInstruments, usedMarketRates);
 				stateHistory[i] = model.state().slice();
 			}
 		
