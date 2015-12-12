@@ -217,7 +217,7 @@ namespace Demo {
 		return zipped;
 	}
 
-	function adjustYAxisLimits(chart: CanvasJS.Chart): void {
+	export function adjustYAxisLimits(chart: CanvasJS.Chart, roundTo = 0.5): void {
 		let minY = Infinity;
 		let maxY = -Infinity;
 		const data = chart.options.data;
@@ -232,7 +232,6 @@ namespace Demo {
 		
 		// Adjust the Y-axis range to half-percent with 5bp margin.
 		const margin = 0.05;
-		const roundTo = 0.50;
 		minY = Math.floor((minY - margin) / roundTo) * roundTo;
 		maxY = Math.ceil((maxY + margin) / roundTo) * roundTo;
 		chart.options.axisY.minimum = minY;

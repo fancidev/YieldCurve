@@ -10105,7 +10105,8 @@
 
 	TextBlock.prototype._wrapText = function wrapText() {
 		//this.ctx.save();
-		var text = new String(trimString(String(this.text)));
+		//var text = new String(trimString(String(this.text)));
+		var text = new String(this.text);
 		var lines = [];
 		var font = this.ctx.font; // Save the current Font
 		var height = 0;
@@ -11693,7 +11694,8 @@
 			ctx.rect(5, axisX.boundingRect.y1, axisX.chart.width - 10, axisX.boundingRect.height);
 			ctx.clip();
 
-			axisX.renderLabelsTicksAndTitle();
+			ctx.restore();
+			/*axisX.renderLabelsTicksAndTitle();
 			ctx.restore();
 
 			if (axisY)
@@ -11701,7 +11703,7 @@
 
 			if (axisY2)
 				axisY2.renderLabelsTicksAndTitle();
-
+*/
 
 			chart.preparePlotArea();
 			var plotArea = axisX.chart.plotArea;
@@ -11749,7 +11751,15 @@
 			if (axisY2)
 				axisY2.renderAxisLine();
 
+			// Move lower
+			axisX.renderLabelsTicksAndTitle();
+			if (axisY)
+				axisY.renderLabelsTicksAndTitle();
 
+			if (axisY2)
+				axisY2.renderLabelsTicksAndTitle();
+			
+			
 			//No need to clip to plotArea because stripLines need to render on top of gridlines
 			axisX.renderStripLinesOfThicknessType("pixel");
 
@@ -12002,7 +12012,10 @@
 					var tickX = (this.ctx.lineWidth % 2 === 1) ? (xy.x << 0) + .5 : (xy.x << 0);
 					this.ctx.beginPath();
 					this.ctx.moveTo(tickX, xy.y << 0);
-					this.ctx.lineTo(tickX, (xy.y + this.tickLength) << 0);
+					if (true)
+						this.ctx.lineTo(tickX, (xy.y - this.tickLength) << 0);
+					else
+						this.ctx.lineTo(tickX, (xy.y + this.tickLength) << 0);
 					this.ctx.stroke();
 				}
 
@@ -12152,7 +12165,10 @@
 					var tickY = (this.ctx.lineWidth % 2 === 1) ? (xy.y << 0) + .5 : (xy.y << 0);
 					this.ctx.beginPath();
 					this.ctx.moveTo(xy.x << 0, tickY);
-					this.ctx.lineTo((xy.x - this.tickLength) << 0, tickY);
+					if (true) 
+						this.ctx.lineTo((xy.x + this.tickLength) << 0, tickY);
+					else
+						this.ctx.lineTo((xy.x - this.tickLength) << 0, tickY);
 					this.ctx.stroke();
 				}
 
@@ -12234,7 +12250,10 @@
 					var tickY = (this.ctx.lineWidth % 2 === 1) ? (xy.y << 0) + .5 : (xy.y << 0);
 					this.ctx.beginPath();
 					this.ctx.moveTo(xy.x << 0, tickY);
-					this.ctx.lineTo((xy.x + this.tickLength) << 0, tickY);
+					if (true)
+						this.ctx.lineTo((xy.x - this.tickLength) << 0, tickY);
+					else
+						this.ctx.lineTo((xy.x + this.tickLength) << 0, tickY);
 					this.ctx.stroke();
 
 				}
@@ -13260,7 +13279,7 @@
 			this.container.style.height = "auto";
 			this.container.style.boxShadow = "1px 1px 2px 2px rgba(0,0,0,0.1)";
 			this.container.style.zIndex = "1000";
-			//this.container.style.pointerEvents = "none";
+			this.container.style.pointerEvents = "none"; // uncomment
 			this.container.style.display = "none";
 			//this.container.style.whiteSpace = "no-wrap";
 
@@ -13284,7 +13303,7 @@
 
 			toolTipHtml += "text-indent: 0px;";
 			toolTipHtml += "white-space: nowrap;";
-			//toolTipHtml += "pointer-events:none;";
+			//toolTipHtml += "pointer-events: none;"; // Uncommented -- doesn't work
 			toolTipHtml += "border-radius: 5px;";
 
 			//Disable Text Selection

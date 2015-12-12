@@ -4,11 +4,9 @@
   <meta charset="utf-8" />
   <title>Demo</title>
   <script type="text/javascript" src="scripts/jquery.min.js"></script>
-  <script type="text/javascript" src="scripts/canvasjs.js"></script>
+  <script src="src/canvasjs-1.8.0-beta4-mod.js"></script>
   <script type="text/javascript" src="scripts/jquery.canvasjs.js"></script>
   <script type="text/javascript" src="scripts/numeric.js"></script>
-  
-  <script src="scripts/zingchart.min.js"></script>
   
   <script type="text/javascript" src="scripts/BSpline.js"></script>
   <script type="text/javascript" src="scripts/SplineModel.js"></script>
@@ -27,6 +25,7 @@
   
   <style>
   body {
+    -webkit-font-smoothing: none;
     font-family: sans-serif;
     font-size: 12px;
     background-color: #eeeeee;
@@ -35,6 +34,112 @@
   
   <script type="text/javascript">
 $(function () {
+	
+	CanvasJS.addColorSet("office", [
+		'#29A2CC',
+		'#D31E1E',
+		'#7CA82B',
+		'#EF8535',
+		'#A14BC9',
+		'#A05F18',
+		'#265E96',
+		'#6B7075',
+		'#96C245'
+	]);
+	
+	$("#timeSeriesChart").CanvasJSChart({
+		colorSet: 'office',
+		toolTip: {
+			shared: true,
+			animationEnabled: false, 
+			enabled: true,
+			fontStyle: 'normal',
+			fontSize: 12,
+			fontFamily: 'Arial',
+			//reversed: true,
+			backgroundColor: 'rgba(255,255,255,1.0)', // 'white', // '#F8F8F8',
+			borderThickness: 1,
+			cornerRadius: 0,
+			borderColor: 'gray',
+			contentFormatter: function (e) {
+				var content = '<strong>' + CanvasJS.formatDate(e.entries[0].dataPoint.x, 'YYYY-MM-DD') + '</strong><hr/>';
+				content += '<table cellspacing="0" cellpadding="0">';
+				for (var i = e.entries.length - 2; i >= 0; i--) {
+					content += '<tr><td style="text-align: right; color: ';
+					content += e.entries[i].dataSeries.color;
+					content += '">';
+					content += e.entries[i].dataSeries.name;
+					content += '</td><td>&nbsp;&nbsp;';
+					content += e.entries[i].dataPoint.y;
+					content += '</td></tr>';
+				}
+				content += '</table>';
+				return content;
+			}
+		},
+		dataPointMinWidth: 3,
+		legend: { 
+			horizontalAlign: 'center', 
+			verticalAlign: 'top', 
+			fontSize: 11,
+			fontFamily: 'Arial',
+			fontWeight: 'normal',
+			cursor: 'pointer',
+			reversed: false,
+			itemclick: function (e) { toggleVisibility(e.dataSeries); e.chart.render(); }
+		},
+		axisX: {
+			valueFormatString: 'YYYY-MM-DD',
+			labelFontFamily: 'Arial',
+			labelFontSize: 12,
+			labelFontColor: 'black',
+			gridThickness: 1,
+			gridColor: 'lightgray',
+			gridDashType: 'dash',
+			stripLines: [{
+				labelBackgroundColor: '#444444',
+				labelFormatter: function (e) { return CanvasJS.formatDate(e.stripLine.value, 'DD-MMM-YYYY'); }
+			}],
+			tickThickness: 1,
+			tickColor: 'gray',
+			tickLength: 5,
+			lineThickness: 1,
+			lineColor: 'gray',
+		},
+		axisY: {
+			tickThickness: 1,
+			tickColor: 'gray',
+			lineThickness: 1,
+			lineColor: 'gray',
+			gridThickness: 1,
+			labelFontColor: 'black',
+			gridColor: 'lightgray',
+			gridDashType: 'dash',
+			labelFontFamily: 'Arial',
+			labelFontSize: 12,
+			interval: 2,
+			//labelFormatter: function (e) { return CanvasJS.formatNumber(e.value, '0.00'); }
+		},
+		axisY2: {
+			tickThickness: 1,
+			tickColor: 'gray',
+			lineThickness: 1,
+			lineColor: 'gray',
+			gridThickness: 1,
+			gridColor: 'lightgray',
+			gridDashType: 'dash',
+			labelFontFamily: 'Arial',
+			labelFontSize: 12,
+			labelFontColor: 'black',
+			interval: 2,
+			//labelFormatter: function (e) { return CanvasJS.formatNumber(e.value, '0.00'); }
+		},
+		zoomEnabled: false,
+		width: 790,
+		height: 200,
+		data: [],
+		dataTable: undefined // filled by drawTimeSeries
+	});
 	
 	$("#termStructureChart").CanvasJSChart({
 		title: {
@@ -49,7 +154,7 @@ $(function () {
 			minimum: 0,
 			gridThickness: 1,
 			gridColor: 'gray',
-			gridDashType: 'dash'
+			gridDashType: 'dash',
 		},
 		axisY: {
 			labelFontSize: 12,
@@ -132,6 +237,7 @@ $(function () {
 				{ text: 'Quarterly', value: 'q' },
 				{ text: 'Yearly', value: 'y' }
 			],
+			index: 2,
 			change: function () {
 				var freq = this.value();
 				refreshTimeSeries(freq);
@@ -190,7 +296,8 @@ $(function () {
 		// Hook keyboard events.
 		$("#timeSeriesChart")
 			.attr('tabindex', '0')
-			.keydown(timeSeriesChart_onKeyDown);
+			.keydown(timeSeriesChart_onKeyDown)
+			.mousedown(timeSeriesChart_onMouseDown);
 	});
 	
 	function refreshTimeSeries(freq)
@@ -211,104 +318,82 @@ $(function () {
 			},
 		});
 		
-		// Redraw the time series chart.
-		var chartData = {
-			type: "line",
-			plotarea: {
-				marginTop: "25px",
-				marginBottom: "25px",
-				marginRight: "40px",
-				marginLeft: "40px",
-			},
-			series: [],
-			crosshairX: {
-				lineWidth: 1,
-				marker: {
-					size: 4,
-					type: "circle",
-					borderColor: "#fff",
-					borderWidth: 1
-				},
-				plotLabel: {
-					offsetY: "5px"
-				}
-			},
-			legend: {
-				borderWidth: 0,
-				backgroundColor: 'transparent',
-				position: "50% 215",
-				//align: 'center',
-				//verticalAlign: 'bottom',
-				layout: "1x",
-			},
-			scaleX: {
-				//"min-value":1420070400000,
-				//step: "month",
-				placement: "opposite",
-				transform: {
-					type: "date",
-					all: '%Y-%m-%d'
-				},
-				"tick": {
-					"placement": "inner",
-				},
-			},
-			"scale-y": {
-				"tick": {
-					"placement": "inner",
-					//"size":"12px"
-				},
-			},
-			"scale-y-2": { 
-				"tick": {
-					"placement": "inner",
-				},
-			},
-			plot: {
-				marker: {
-					visible: false
-				},
-				hoverMarker: {
-					visible: true
-				},
-				"selection-mode": 'multiple',
-				"selected-market": {
-					visible: true,
-					size: 4,
-					type: "circle",
-					borderColor: "#000",
-					borderWidth: 2
-				}
-			}
-		};
+		var chart = $("#timeSeriesChart").CanvasJSChart();
+		chart.options.data.length = 0;
 		for (var j = 0; j < numCols(usedData); j++) {
-			var seriesData = [];
+			var series = { 
+				type: 'line',
+				name: usedData.colnames[j],
+				markerType: 'circle',
+				//legendMarkerType: 'square',
+				highlightEnabled: true,
+				showInLegend: false,
+				dataPoints: [],
+				axisYType: (j % 2 === 0)? "primary" : "secondary",
+				click: onClickTimeSeries,
+				focusable: true // ???
+			};
 			for (var i = 0; i < numRows(usedData); i++) {
-				seriesData[i] = [
-					usedData.rownames[i].getTime(),
-					usedData[i][j]
-				];
+				series.dataPoints[i] = {
+					x: usedData.rownames[i],
+					y: usedData[i][j]
+				};
 			}
-			chartData.series.splice(0, 0, {
-				values: seriesData,
-				text: usedData.colnames[j],
-				scales: "scale-x,scale-y,scale-y-2"
+			chart.options.data.push(series);
+		}
+		
+		// Add dummy series simply for the pretty legends
+		for (var j = 0; j < numCols(usedData); j++) {
+			var series = { 
+				type: 'scatter',
+				name: '\u2007' + usedData.colnames[j],
+				markerType: 'square',
+				//markerSize: 10,
+				highlightEnabled: true,
+				showInLegend: true,
+				dataPoints: [],
+				axisYType: (j % 2 === 0)? "primary" : "secondary",
+				//click: onClickTimeSeries,
+			};
+			chart.options.data.push(series);
+		}
+		
+		Demo.adjustYAxisLimits(chart, 1.0);
+
+		// Add a background column chart to catch click event. // use as indicator.
+		var backgroundSeries = {
+			type: "rangeColumn",
+			//color: "#B0D0B0",
+			color: 'transparent',
+			highlightColor: 'gray',
+			//highlightColor: 'orange',
+			highlightOpacity: 0.5,
+			showInLegend: false,
+			toolTipContent: null,
+			click: onClickTimeSeries,
+			dataPoints: []
+		};
+		var yRange = [ chart.options.axisY.minimum, chart.options.axisY.maximum ];
+		for (var i = 0; i < numRows(usedData); i++) {
+			backgroundSeries.dataPoints.push({
+				x: usedData.rownames[i], y: yRange
 			});
 		}
-		zingchart.render({
-			id: 'timeSeriesChart',
-			data: chartData,
-			// output: "html5" // "flash" | "html5" | "canvas" | "svg" | "vml" | "auto"
-			output: "vml",
-			//height: 150,
-			//width:"100%"
-			events: {
-				guide_mousemove: timeSeriesChart_onGuideMove,
-				click: timeSeriesChart_onClick,
-			}
-		});
+		chart.options.data.push(backgroundSeries);
+		
+		chart.render();
 	}
 	
+	function onClickTimeSeries(e)
+	{
+		// Select the clicked date.
+		var dt = e.dataPoint.x;
+		currentDateIndex = getRowIndex(demoData, dt);
+		refreshTermStructure();
+		setSelection([currentDateIndex]);
+	}
+	
+	/*
 	var timeSeriesChart_guidePosition = null; // Date
 	
 	function timeSeriesChart_onGuideMove(e) {
@@ -330,10 +415,16 @@ $(function () {
 		}
 		$('#timeSeriesChart').focus();
 	}
+	*/
+	
+	function timeSeriesChart_onMouseDown(e) {
+		$('#timeSeriesChart').focus();
+	}
 	
 	function timeSeriesChart_onKeyDown(e) 
 	{
-		//var chart = $('#timeSeriesChart').CanvasJSChart();
+		var chart = $('#timeSeriesChart').CanvasJSChart();
+		var table = demoData;
 		//var table = chart.dataTable; // our attached property
 		//if (table.length <= 1) // no observations
 		//	return;
@@ -343,25 +434,23 @@ $(function () {
 		/// Shift+L/R/H/E: select a range of items
 		/// For a list of keycodes, see https://api.jquery.com/keydown/
 		var selection;
-		alert('a');
 		switch (e.which) {
 			case 37: // left arrow
-				$('#debugOutput').text('Left');
-		/*		selection = getSelectedIndices();
+				selection = getSelection();
 				if (selection.length == 0) {
-					selection = [table.length-1];
-				} else if (selection[0] > 1) {
-					if (e.shiftKey) { // TBD: doesn't work well
-						selection.push(selection[0]-1);
-					} else if (e.ctrlKey) {
-						for (var i = 0; i < selection.length; i++)
-							--selection[i];
-					} else {
-						selection = [selection[0]-1];
-					}
+					selection = [numRows(table) - 1];
+				} else if (selection[0] > 0) {
+					//if (e.shiftKey) { // TBD: doesn't work well
+					//	selection.push(selection[0]-1);
+					//} else if (e.ctrlKey) {
+					//	for (var i = 0; i < selection.length; i++)
+					//		--selection[i];
+					//} else {
+						selection = [selection[0] - 1];
+					//}
 				}
-				setSelectedIndices(selection);
-		*/		break;
+				setSelection(selection);
+				break;
 			case 39: // right arrow
 				$('#debugOutput').text('Right');
 		/*		selection = getSelectedIndices();
@@ -380,16 +469,65 @@ $(function () {
 				setSelectedIndices(selection);
 		*/		break;
 			case 36: // home
-		/*		if (table.length > 1) {
-					setSelectedIndices([1]);
+				if (table.length > 0) {
+					setSelection([0]);
 				}
-		*/		break;
+				break;
 			case 35: // end
-		/*		if (table.length > 1) {
-					setSelectedIndices([table.length-1]);
+				if (table.length > 0) {
+					setSelection([table.length - 1]);
 				}
-		*/		break;
+				break;
 		}
+	}
+	
+	// Returns an array of (zero-based) indices of selected dates
+	// in the time series chart.
+	function getSelection()
+	{
+		var chart = $('#timeSeriesChart').CanvasJSChart();
+		var stripLines = chart.options.axisX.stripLines;
+		var indices = [];
+		for (var i = 0; i < stripLines.length; i++) {
+			indices.push(stripLines[i].index);
+		}
+		//indices.sort();
+		return indices;
+	}
+
+	function setSelection(indices)
+	{
+		indices.sort(function (a,b) { return a-b; });
+		
+		// Draw a vertical line across the chart to highlight the selected dates.
+		var chart = $('#timeSeriesChart').CanvasJSChart();
+		var table = demoData;
+		var dates = table.rownames;
+		var stripLines = chart.options.axisX.stripLines;
+		stripLines.length = 0;
+		for (var i = 0; i < indices.length; i++) {
+			var dt = dates[indices[i]];
+			stripLines.push({
+				index: indices[i],
+				value: dt,
+				label: ' ' + CanvasJS.formatDate(dt, 'YYYY-MM-DD') + ' ',
+				//labelBackgroundColor: '#444444'
+				//label: '▲',
+				color: 'red',
+				thickness: 1,
+				labelFontColor: 'white',
+				labelBackgroundColor: '#666666',
+			});
+		}
+		chart.render();
+		
+		// Plot the term structure of the selected dates on a separate chart.
+		//var filtered = [table[0]];
+		//indices.sort();
+		//for (var i = 0; i < indices.length; i++) {
+		//	filtered.push(table[indices[i]]);
+		//}
+		//drawTermStructure(filtered);
 	}
 	
 	function refreshTermStructure()
@@ -489,7 +627,9 @@ $(function () {
   <div style="width: 800px; margin: 0 auto;">
   <!--<div>-->
     <div id="toolbar"></div>
-    <div id="timeSeriesChart" style="width:100%; height: 200px;"></div>
+    <div style="width: 100%; height: 200px; background-color: white">
+      <div id="timeSeriesChart" style="height: 200px; width: 790px; margin: 5px"></div>
+    </div>
     <div id="termStructureChart" style="height:300px; margin: 2px; border-width:1px; border-style:solid; border-color:gray">
       [Term Structure]
     </div>
