@@ -57,20 +57,24 @@ class TimeSeriesChart {
 				cornerRadius: 0,
 				borderColor: 'gray',
 				contentFormatter: function(e) {
-					var content = '<strong>' + CanvasJS.formatDate(e.entries[0].dataPoint.x, 'YYYY-MM-DD') + '</strong><hr/>';
-					content += '<table cellspacing="0" cellpadding="0">';
+					let content = '';
 					// Last series is background series; skip it.
-					for (var i = e.entries.length - 2; i >= 0; i--) {
-						content += '<tr><td style="text-align: right; color: ';
-						content += e.entries[i].dataSeries.color;
-						content += '">';
-						content += e.entries[i].dataSeries.name;
-						content += '</td><td>&nbsp;&nbsp;';
-						content += e.entries[i].dataPoint.y;
-						content += '</td></tr>';
+					for (let i = e.entries.length - 2; i >= 0; i--) {
+						if (e.entries[i].dataSeries.visible !== false) {
+							content += '<tr><td style="text-align: right; color: ';
+							content += e.entries[i].dataSeries.color;
+							content += '">';
+							content += e.entries[i].dataSeries.name;
+							content += '</td><td>&nbsp;&nbsp;';
+							content += e.entries[i].dataPoint.y;
+							content += '</td></tr>';
+						}
 					}
-					content += '</table>';
-					return content;
+					if (content !== '') {
+						content = '<hr/><table cellspacing="0" cellpadding="0">' + content + '</table>';
+					}
+					const header = '<strong>' + CanvasJS.formatDate(e.entries[0].dataPoint.x, 'YYYY-MM-DD') + '</strong>';
+					return header + content;
 				}
 			},
 			dataPointMinWidth: 3,
