@@ -115,6 +115,7 @@ class TimeSeriesChart {
 				gridThickness: 1,
 				tickColor: 'gray',
 				tickThickness: 1,
+				title: ' ' // for left margin
 			},
 			axisY2: {
 				interval: 2,
@@ -129,6 +130,7 @@ class TimeSeriesChart {
 				gridThickness: 1,
 				tickColor: 'gray',
 				tickThickness: 1,
+				title: ' ' // for right margin
 			},
 			zoomEnabled: false,
 			data: []
