@@ -131,7 +131,7 @@ class Swap implements Instrument {
 		return this._maturity;
 	}
 
-	impliedRate(discount: Discount, deriv?: number[]): number {
+	impliedRate(discount: Discount, gradient?: number[]): number {
 
 		var T = this._maturity;
 
@@ -151,10 +151,10 @@ class Swap implements Instrument {
 
 		var swapRate = (1 - finalDf) / annuityFactor;
 		var swapRateDeriv = numeric.dot(-1 / annuityFactor, numeric.add(finalDfDeriv, numeric.dot(swapRate, annuityFactorDeriv)));
-		if (deriv) {
-			deriv.length = 0;
+		if (gradient) {
+			gradient.length = 0;
 			for (var i = 0; i < swapRateDeriv.length; i++)
-				deriv.push(swapRateDeriv[i]);
+				gradient.push(swapRateDeriv[i]);
 		}
 		return swapRate;
 	}

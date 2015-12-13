@@ -160,8 +160,9 @@ namespace Demo {
 		const baseCurve = fitYieldCurve(model, usedInstruments, usedMarketRates);
 
 		// Create plot instruments.
-		let plotInstruments = new Array<Instrument>();
-		for (let t = 1 / 16; t <= dataPoints[n - 1].x; t += 1 / 16) {
+		const plotInstruments = new Array<Instrument>();
+		const step_t = (t: number) => t < 1 ? 1 / 16 : t < 5 ? 1 / 4 : t < 10 ? 1 / 2 : 1;
+		for (let t = step_t(0); t <= dataPoints[n - 1].x; t += step_t(t)) {
 			const instrument = plotInstrumentTemplate.createInstrument(t);
 			plotInstruments.push(instrument);
 		}
@@ -240,7 +241,7 @@ namespace Demo {
 		chart.options.axisY.maximum = maxY;
 		if (chart.options.axisY2) {
 			chart.options.axisY2.minimum = minY;
-			chart.options.axisY2.maximum = maxY;			
+			chart.options.axisY2.maximum = maxY;
 		}
 		// Note: the caller must call chart.render() to take effect.
 		// chart.render();
