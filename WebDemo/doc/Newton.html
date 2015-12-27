@@ -44,21 +44,24 @@ where $\partial f / \partial \vx$ is a row gradient vector of $f$ with respect t
 
 <p>Let $n$ be the number of market rates to fit to. For $1 \le i \le n$, let instrument $i$ be represented by a function $f_i(\vx)$. When we have $n$ market rates, this forms $n$ linear constraints.
 
-<p>If the number of instruments is equal to the number of state variables, the model can be fit by an iterative approach as follows. Start from an initial guess $\vx_0 = \mathbf{0}$. Given a guess $\vx_k$, let $\hat{\vy}_k = ( f_1(\vx_k), \cdots, f_n(\vx_k) )^T$ be the vector of model rates. Let $\vy$ be the vector of market rates. Then solve the linear system
+<p>If the number of instruments is equal to the number of state variables, the model can be fit by an iterative approach as follows. Start from an initial guess $\vx_0 = \mathbf{0}$. Given a guess $\vx_k$, let $\hat{\vy}_k = ( f_1(\vx_k), \cdots, f_n(\vx_k) )^T$ be the vector of model rates. Let $\vy$ be the vector of market rates. To make the next guess, solve the linear system
 $$
 \vJ_k \Delta \vx_k = \vy - \hat{\vy}_k
 $$
-for $\Delta \vx_k$, where $\vJ_k \triangleq (\partial f_1 / \partial \vx, \cdots, \partial f_n / \partial \vx)^T (\vx_k)$ is the Jacobian matrix of the instruments to the state vectors evaluated at $\vx_k$. Let $\vx_{k+1} = \vx_k + \Delta \vx_k$ be the refined guess. Repeat this process until the maximum error is smaller than a threshold, i.e. $||\hat{\vy}_k - \vy||_{\infty} < \epsilon$. We typically set $\epsilon$ to 0.0001 basis-point.
+for $\Delta \vx_k$, where $\vJ_k \triangleq (\partial f_1 / \partial \vx, \cdots, \partial f_n / \partial \vx)^T (\vx_k)$ is the Jacobian matrix of the instruments to the state vectors evaluated at $\vx_k$. Then $\vx_{k+1} = \vx_k + \Delta \vx_k$ is the refined guess.
+
+<p>
+Repeat this process until the maximum error is smaller than a threshold, i.e. $||\hat{\vy}_k - \vy||_{\infty} < \epsilon$. We typically set $\epsilon$ to 0.0001 basis-point. When the state vectors are indeed linear-ish in market rates, the algorithm typically converges in 3 to 5 iterations.
 
 <h2>Model-Specific Linear Constraints</h2>
 
 <p>If there are more state variables than the number of market rate constraints, i.e. $n < p$, we allow the model to supply its own linear constraints on the state variables. This is used for example in B-Spline fitting to impose constraints on the derivatives at end-points. 
 
-<p>Let $m$ be the number of model-specific linear constraints. They take the form $\vP \vx = \vq$ where $\vP$ and $\vq$ each contains $m$ rows. We then have $m$ more equations for each iteration:
+<p>Let $m$ be the number of model-specific linear constraints. They take the form $\vP \vx = \vq$ where $\vP$ and $\vq$ each contains $m$ rows. In an iterative setting, they form $m$ additional linear equations:
 $$
 \vP \Delta \vx_k = \vq - \vP \vx_k .
 $$
-Note that these model-specific linear constraints are fit exactly as long as there is at least one iteration.
+These model-specific linear constraints are fit exactly in each iteration.
 
 <p>It is convenient to combine the market rate constraints and model-specific constraints into a single set of linear equations, $\vA_k \Delta \vx_k = \vb_k$, where
 $$
@@ -68,21 +71,29 @@ $$
 
 <h2>Quadratic Objective</h2>
 
-<p>If there are still more state variables than the number of market rates and model-specific linear constraints combined, i.e. $n + m \lt p$, we require the model to supply a quadratic form of the state vector to minimize. That is, the model must supply a $p$-by-$p$ nonnegative-definite matrix $\vH$, and in each iteration step we optimize
+<p>If there are still more state variables than the number of market rates and model-specific linear constraints combined, i.e. $n + m \lt p$, we require the model to supply a quadratic form of the state vector to minimize. That is, the model must supply a $p$-by-$p$ symmetric nonnegative-definite matrix $\vH$, and we optimize
 $$
 \min_{\vx} \frac{1}{2} \vx^T \vH \vx 
 $$
-subject to $\vA_k \Delta \vx = \vb_k$. Using standard Lagrange method, we form the unconstrained problem
+subject to the market rate constraints and model-specific linear constraints.
+
+<p>In step $k$ of an iteration, we optimize the equivalent objective (omitting subscript $k$ for clarity)
 $$
-z = \frac{1}{2} \vx^T \vH \vx + \vlambda^T ( \vA \vx - \vb ) .
+\min_{\Delta \vx} \frac{1}{2} (\Delta \vx)^T \vH (\Delta \vx) + (\Delta \vx)^T \vH \vx
 $$
-Setting $\partial z / \partial \vx = 0$ yields
+subject to $\vA \Delta \vx = \vb$.
+
+Using standard Lagrange method, we form the unconstrained problem
 $$
-\vH \vx + \vA^T \vlambda = \vzero .
+z = \frac{1}{2} (\Delta \vx)^T \vH (\Delta \vx) + (\Delta \vx)^T \vH \vx + \vlambda^T ( \vA \Delta \vx - \vb ) .
+$$
+Setting $\partial z / \partial \Delta \vx = 0$ yields
+$$
+\vH \Delta \vx + \vA^T \vlambda = -\vH \vx .
 $$
 Setting $\partial x / \partial \vlambda = 0$ yields
 $$
-\vA \vx = \vb .
+\vA \Delta \vx = \vb .
 $$
 Combining them, we solve the system
 $$
@@ -91,18 +102,16 @@ $$
 \vA & \mathbf{0}
 \end{bmatrix}
 \begin{bmatrix}
-\vx \\ \vlambda
+\Delta \vx \\ \vlambda
 \end{bmatrix}
 =
 \begin{bmatrix}
-\mathbf{0} \\ \vb
+-\vH \vx \\ \vb
 \end{bmatrix}
 .
 $$
-This is an equation of $p+n+m$ elements. 
-
-<p>
-Note that $\vH$ need not be invertible. In particular, if the model can already be fit using the market inputs and model-specific linear constraints, then simply set $\vH = \vzero$. In situations where $\vH$ is somewhat degenerate, we can simplify the problem a little by removing the equations that correspond to rows in $\vH$ where all elements are zero. This reduces the number of unknowns to solve.
+This is a system of $p+n+m$ equations. Note that $\vH$ may not be invertible, so the system must be solved as a whole.
+<!-- In particular, if the model can already be fit using the market inputs and model-specific linear constraints, then simply set $\vH = \vzero$. We may simplify the problem a little by removing the equations that correspond to rows in $\vH$ where all elements are zero. This reduces the number of unknowns to solve.-->
 
 </body>
 </html>  

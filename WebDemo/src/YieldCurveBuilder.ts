@@ -72,8 +72,7 @@ interface YieldCurveModelTemplate {
 
 /**
  * Fits the given yield curve model to observed market rates of a
- * set of instruments. The number of instruments must be equal to
- * the number of internal state variables in the model.
+ * set of instruments.
  * 
  * This function uses Newton's method to fit the model. It iterates
  * until the maximum deviation between market and model rates is no
@@ -86,14 +85,25 @@ interface YieldCurveModelTemplate {
  */
 function fitYieldCurve(model: YieldCurveModel, instruments: Instrument[], marketRates: number[]): Discount {
 
+    const state = model.state();
+    const p = state.length;
+
     const n = instruments.length;
     if (n !== marketRates.length) {
         throw new RangeError('instruments and marketRates must have the same length.');
     }
 
     const m = model.constraints ? model.constraints()[1].length : 0;
-    if (n + m !== model.state().length) {
-        throw new RangeError("Incorrect number of instruments.");
+    if (n + m > p) {
+        throw new RangeError("There are more constraints than state variables.");
+    }
+
+    const H = model.quadratic ? model.quadratic() : new Array<Array<number>>();
+    if (H.length !== 0 && H.length !== p) {
+        throw new RangeError("Quadratic matrix must have the same size as state vector.");
+    }
+    if (n + m < p && H.length === 0) {
+        throw new RangeError("Quadratic coefficients must be supplied when there are not enough constraints.");
     }
 	
     // Creates a closure of the discount function.
@@ -141,17 +151,26 @@ function fitYieldCurve(model: YieldCurveModel, instruments: Instrument[], market
 		
         // Add model-dependent constraints.
         if (m > 0) {
-            const state = model.state();
             const [extraConstraints, extraValues] = model.constraints();
             for (let i = 0; i < m; i++) {
                 C[n + i] = extraConstraints[i];
                 b[n + i] = extraValues[i] - numeric.dot(C[n + i], state);
             }
         }
+        
+        // Add quadratic objective.
+        if (H.length > 0) {
+            const CC = numeric.mul(numeric.identity(n + m + p), 0);
+            numeric.setBlock(CC, [0, 0], [p, p], H);
+            numeric.setBlock(CC, [p, 0], [p + n + m, p], C);
+            numeric.setBlock(CC, [0, p], [p, p + n + m], numeric.transpose(C));
+            const bb = numeric.sub(0, numeric.dot(H, state));
+            C.splice(0, C.length, ...CC);
+            b.splice(0, 0, ...bb);
+        }
 		
         // Solve the equation.
-        const delta = numeric.solve(C, b);
-        const state = model.state();
+        const delta = numeric.solve(C, b).slice(0, p);
         numeric.addeq(state, delta);
     }
 
