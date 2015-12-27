@@ -21,7 +21,7 @@ class DiscreteModel implements YieldCurveModel {
 
         this.maturity = maturity;
         this.n = n;
-        this.F = new Array<number>(n + 1);
+        this.F = numeric.rep([n + 1], 0);
         this.covar = numeric.mul(covar, 1);
 
         const L = new Array<Array<number>>(n - 1);
@@ -51,7 +51,7 @@ class DiscreteModel implements YieldCurveModel {
     }
 
     discount(t: number, gradient?: number[]): number {
-        const k = t / this.maturity;
+        const k = t / (this.maturity / this.n);
         if (k < 0) {
             throw new RangeError('t cannot be negative');
         }

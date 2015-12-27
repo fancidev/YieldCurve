@@ -11,6 +11,7 @@
   <script type="text/javascript" src="scripts/BSpline.js"></script>
   <script type="text/javascript" src="scripts/SplineModel.js"></script>
   <script type="text/javascript" src="scripts/Vasicek.js"></script>
+  <script type="text/javascript" src="scripts/DiscreteModel.js"></script>
   <script type="text/javascript" src="scripts/YieldCurveBuilder.js"></script>
   <script type="text/javascript" src="scripts/Instruments.js"></script>
   <script type="text/javascript" src="scripts/PanelData.js"></script>
@@ -243,7 +244,7 @@ $(function () {
 		toolbar.enable(btnCalibrate, shouldEnable);
 	}
 	
-	var modelTemplates = splineModelTemplates.concat(vasicekModelTemplates);
+	var modelTemplates = discreteModelTemplates.concat(splineModelTemplates.concat(vasicekModelTemplates));
 	
 	function getMaturityInYears(mat) {
 		var unit = mat.substring(mat.length - 1);
