@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <title>Discrete Model</title>
+  <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [['$','$'], ['\\(','\\)']]
+    }
+  });
+  </script>
+  <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</head>
+<body>
+<div style="display: none">
+$$
+\newcommand{\vA}{\mathbf{A}}
+\newcommand{\vH}{\mathbf{H}}
+\newcommand{\vL}{\mathbf{L}}
+\newcommand{\vP}{\mathbf{P}}
+\newcommand{\vb}{\mathbf{b}}
+\newcommand{\vq}{\mathbf{q}}
+\newcommand{\vx}{\mathbf{x}}
+\newcommand{\vy}{\mathbf{y}}
+\newcommand{\vSigma}{\boldsymbol{\Sigma}}
+\newcommand{\vdelta}{\boldsymbol{\delta}}
+\newcommand{\vlambda}{\boldsymbol{\lambda}}
+\newcommand{\vmu}{\boldsymbol{\mu}}
+\newcommand{\vzero}{\mathbf{0}}
+$$
+</div>
+<h1>Discrete Model</h1>
+<hr/>
+<p>This is a simple model that discretize the forward curve into a few points and optimize a simple quadratic form.
+
+<p>Divide the horizon $[0, T]$ into $n$ equal periods $\delta = T / n$, and label $0 = \tau_0 < \tau_1 < \cdots < \tau_n = T$. Let $f_i$, $1 \le i \le n$ be the forward rate applied to period $(\tau_{i-1}, \tau_i)$. Let $\vSigma_{(n-1)\times(n-1)}$ be the instantaneous covariance matrix of the first $(n-1)$ forward rates. Let $\mu_i = f_{i+1} - f_i$, $1 \le i \le n-1$ be the (discretized) slope of the forward curve. We optimize the quadratic form
+$$
+\frac{1}{2} \vmu^T \vSigma^{-1} \vmu
+$$
+subject to the usual market rate constraints.
+
+<p>To use the Newton solver, let the state vector be $\vx \triangleq (F_0, F_1, \cdots, F_n)^T$ where $F_k \triangleq -\ln P(\tau_k) = \sum_{i=1}^k f_i \delta$. Then $f_i = (F_i - F_{i-1}) / \delta$ (noting that $F_0 \equiv 0$) and $\mu_i = (F_{i+1} - 2 F_i + F_{i-1}) / \delta$. So
+$$
+\vmu \propto \begin{bmatrix}
+1 & -2 &  1          \\
+  &  1 & -2 & 1      \\
+  &    &    & \ddots \\
+  &    &    &      1 & -2 & 1 
+\end{bmatrix} 
+\begin{bmatrix}
+F_0 \\ F_1 \\ \vdots \\ F_n 
+\end{bmatrix}
+.
+$$
+Writing $\vmu \triangleq \vL \vx$ where $\vL$ is defined above, the quadratic objective is $\vL^T \vSigma^{-1} \vL$. We then use the Newton solver to fit the model.
+<!-- The gradient of discount factor $P$ to state vectors can be obtained readily. -->
+
+</body>
+</html>  

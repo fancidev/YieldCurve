@@ -21,8 +21,12 @@ interface Numeric {
     dot(x: vector, y: number): vector;
     dot(x: vector, y: vector): number;
     dot(x: matrix, y: vector): vector;
+    dot(x: vector, y: matrix): vector;
+    dot(x: matrix, y: matrix): matrix;
 
     identity(n: int): matrix;
+
+    inv(x: number[][]): number[][];
 
     linspace(a: number, b: number, n: number): number[];
 

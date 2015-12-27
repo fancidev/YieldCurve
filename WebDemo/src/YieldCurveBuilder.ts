@@ -161,9 +161,9 @@ function fitYieldCurve(model: YieldCurveModel, instruments: Instrument[], market
         // Add quadratic objective.
         if (H.length > 0) {
             const CC = numeric.mul(numeric.identity(n + m + p), 0);
-            numeric.setBlock(CC, [0, 0], [p, p], H);
-            numeric.setBlock(CC, [p, 0], [p + n + m, p], C);
-            numeric.setBlock(CC, [0, p], [p, p + n + m], numeric.transpose(C));
+            numeric.setBlock(CC, [0, 0], [p - 1, p - 1], H);
+            numeric.setBlock(CC, [p, 0], [p + n + m - 1, p - 1], C);
+            numeric.setBlock(CC, [0, p], [p - 1, p + n + m - 1], numeric.transpose(C));
             const bb = numeric.sub(0, numeric.dot(H, state));
             C.splice(0, C.length, ...CC);
             b.splice(0, 0, ...bb);
