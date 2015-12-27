@@ -34,13 +34,15 @@ $$
 <hr/>
 <p>This is a simple model that discretize the forward curve into a few points and optimize a simple quadratic form.
 
-<p>Divide the horizon $[0, T]$ into $n$ equal periods $\delta = T / n$, and label $0 = \tau_0 < \tau_1 < \cdots < \tau_n = T$. Let $f_i$, $1 \le i \le n$ be the forward rate applied to period $(\tau_{i-1}, \tau_i)$. Let $\vSigma_{(n-1)\times(n-1)}$ be the instantaneous covariance matrix of the first $(n-1)$ forward rates. Let $\mu_i = f_{i+1} - f_i$, $1 \le i \le n-1$ be the (discretized) slope of the forward curve. We optimize the quadratic form
+<h2>Model</h2>
+
+<p>Divide the horizon $[0, T]$ into $n$ equal periods of length $\delta = T / n$, and label $0 = \tau_0 < \tau_1 < \cdots < \tau_n = T$. Let $f_i$, $1 \le i \le n$ be the forward rate applied to period $(\tau_{i-1}, \tau_i)$. Let $\vSigma_{(n-1)\times(n-1)}$ be the instantaneous covariance matrix of the first $(n-1)$ forward rates. Let $\mu_i = f_{i+1} - f_i$, $1 \le i \le n-1$ be the (discretized) slope of the forward curve. We optimize the quadratic form
 $$
 \frac{1}{2} \vmu^T \vSigma^{-1} \vmu
 $$
 subject to the usual market rate constraints.
 
-<p>To use the Newton solver, let the state vector be $\vx \triangleq (F_0, F_1, \cdots, F_n)^T$ where $F_k \triangleq -\ln P(\tau_k) = \sum_{i=1}^k f_i \delta$. Then $f_i = (F_i - F_{i-1}) / \delta$ (noting that $F_0 \equiv 0$) and $\mu_i = (F_{i+1} - 2 F_i + F_{i-1}) / \delta$. So
+<p>To use the Newton solver, let the state vector be $\vx \triangleq (F_0, F_1, \cdots, F_n)^T$ where $F_k \triangleq -\ln P(\tau_k) = \sum_{i=1}^k f_i \delta$ and $F_0 \equiv 0$. Then $f_i = (F_i - F_{i-1}) / \delta$ and $\mu_i = (F_{i+1} - 2 F_i + F_{i-1}) / \delta$. So
 $$
 \vmu \propto \begin{bmatrix}
 1 & -2 &  1          \\
@@ -54,7 +56,22 @@ F_0 \\ F_1 \\ \vdots \\ F_n
 .
 $$
 Writing $\vmu \triangleq \vL \vx$ where $\vL$ is defined above, the quadratic objective is $\vL^T \vSigma^{-1} \vL$. We then use the Newton solver to fit the model.
-<!-- The gradient of discount factor $P$ to state vectors can be obtained readily. -->
+
+<h2>Covariance Functions</h2>
+
+The curve shape is solely determined by the covariance matrix $\vSigma$ of forward rate movements. Some special cases are summarized below.
+
+<p><b>i.i.d. forward rate.</b> This produces the <i>same</i> curve as natural cubic spline interpolation, featuring a smooth forward curve and non-local bump response. This is the method used in a 1994 paper.
+
+<p><b>i.i.d. zero-coupon rate.</b> This produces an ugly zig-zag forward curve, but linear-ish bump response.
+
+<p><b>i.i.d. log-discount factor (i.e. $F$).</b> This produces something close to a piece-wise flat forward curve, with linear-ish bump response.
+
+<p><b>Constant correlation (forward rates).</b> $C(s, t) = I(s = t) + I(s \ne t) \rho$. This produces an undesirable forward curve that tilts up at long end. The bump response is non-local.
+
+<p><b>Exponential correlation (forward rates).</b> $C(s, t) = \exp (-k|s-t|)$. The curve looks like natural cubic spline, but has stronger propagation in bump response.
+
+<p><b>Gaussian correlation (forward rates).</b> $C(s, t) = \exp (-k(s-t)^2)$. Similar to natural cubic spline when $k$ is large, and fails to compute due to numerical error when $k$ is small.
 
 </body>
 </html>  

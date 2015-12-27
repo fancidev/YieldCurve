@@ -133,5 +133,5 @@ const discreteModelTemplates = [
     new DiscreteModelTemplate('Discrete (i.i.d. fwd)', 30, 0.25, (s, t) => (s === t) ? 1 : 0),
     new DiscreteModelTemplate('Discrete (const cor)', 30, 0.25, (s, t) => (s === t) ? 1 : 0.5),
     new DiscreteModelTemplate('Discrete (exp cor)', 30, 0.25, (s, t) => Math.exp(-Math.abs(s - t))),
-    new DiscreteModelTemplate('Discrete (exp^2 cor)', 30, 0.25, (s, t) => Math.exp(-((s - t) ** 2))),
+    new DiscreteModelTemplate('Discrete (exp^2 cor)', 30, 0.25, (s, t) => Math.exp(-2 * ((s - t) ** 2))),
 ];
