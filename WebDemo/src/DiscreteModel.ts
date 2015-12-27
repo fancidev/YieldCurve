@@ -82,25 +82,56 @@ class DiscreteModel implements YieldCurveModel {
     }
 }
 
+type CovarianceFunction = (s: number, t: number) => number;
+
 class DiscreteModelTemplate implements YieldCurveModelTemplate {
 
     public name: string;
     private interval: number;
     private maturity: number;
-    private covar: number[][];
+    private covar: CovarianceFunction;
 
-    constructor(name: string, maturity: number, interval: number) {
+    constructor(name: string, maturity: number, interval: number, covar: CovarianceFunction) {
         this.name = name;
         this.maturity = maturity;
         this.interval = interval;
-        this.covar = numeric.identity(maturity / interval - 1);
+        this.covar = covar;
     }
 
     createModel(instruments: Instrument[]): YieldCurveModel {
-        return new DiscreteModel(this.maturity, this.maturity / this.interval, this.covar);
+        const n = this.maturity / this.interval;
+        const covarMatrix = numeric.mul(numeric.identity(n - 1), 0);
+        const delta = this.interval;
+        for (let i = 0; i < n - 1; i++) {
+            for (let j = 0; j < n - 1; j++) {
+                covarMatrix[i][j] = this.covar((i + 1) * delta, (j + 1) * delta);
+            }
+        }
+        return new DiscreteModel(this.maturity, n, covarMatrix);
     }
 }
 
 const discreteModelTemplates = [
-    new DiscreteModelTemplate('Discrete', 30, 0.25)
+    new DiscreteModelTemplate('Discrete (i.i.d. log df)', 30, 0.25, function(s, t) {
+        const delta = 0.25;
+        if (s === t)
+            return 1 + ((s === delta) ? 0 : 1);
+        else if (Math.abs(s - t) === delta)
+            return -1;
+        else
+            return 0;
+    }),
+    new DiscreteModelTemplate('Discrete (i.i.d. zc)', 30, 0.25, function(s, t) {
+        const delta = 0.25;
+        if (s === t)
+            return s ** 2 + (s - delta) ** 2;
+        else if (Math.abs(s - t) === delta)
+            return -(Math.min(s, t) ** 2);
+        else
+            return 0;
+    }),
+    new DiscreteModelTemplate('Discrete (i.i.d. fwd)', 30, 0.25, (s, t) => (s === t) ? 1 : 0),
+    new DiscreteModelTemplate('Discrete (const cor)', 30, 0.25, (s, t) => (s === t) ? 1 : 0.5),
+    new DiscreteModelTemplate('Discrete (exp cor)', 30, 0.25, (s, t) => Math.exp(-Math.abs(s - t))),
+    new DiscreteModelTemplate('Discrete (exp^2 cor)', 30, 0.25, (s, t) => Math.exp(-((s - t) ** 2))),
 ];
