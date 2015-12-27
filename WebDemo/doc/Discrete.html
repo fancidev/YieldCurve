@@ -28,6 +28,7 @@ $$
 \newcommand{\vlambda}{\boldsymbol{\lambda}}
 \newcommand{\vmu}{\boldsymbol{\mu}}
 \newcommand{\vzero}{\mathbf{0}}
+\newcommand{\Cov}{\mathrm{Cov}}
 $$
 </div>
 <h1>Discrete Model</h1>
@@ -57,7 +58,21 @@ F_0 \\ F_1 \\ \vdots \\ F_n
 $$
 Writing $\vmu \triangleq \vL \vx$ where $\vL$ is defined above, the quadratic objective is $\vL^T \vSigma^{-1} \vL$. We then use the Newton solver to fit the model.
 
-<h2>Covariance Functions</h2>
+<h2>Covariance Conversions</h2>
+
+<p>The model natively takes as input forward rate covariance $C_f(\tau_i, \tau_j) \equiv \Cov[\Delta f_i, \Delta f_j]$. 
+
+<p>If the covariance between log-discount factors $C_F(\tau_i, \tau_j) \equiv \Cov[\Delta F_i, \Delta F_j]$ are known, we can compute $C_f$ as
+$$
+C_f(\tau_i, \tau_j) = \frac{1}{\delta^2} \left[ C_F(\tau_i, \tau_j) + C_F(\tau_{i-1}, \tau_{j-1}) - C_F(\tau_i, \tau_{j-1}) - C_F(\tau_{i-1},\tau_j) \right] .
+$$
+
+<p>If the covariance between zero-coupon rates $C_R(\tau_i, \tau_j) \equiv \Cov[\Delta R_i, \Delta R_j]$ are known, we can compute $C_f$ as
+$$
+C_f(\tau_i, \tau_j) = \frac{1}{\delta^2} \left[ \tau_i \tau_j C_R(\tau_i, \tau_j) + \tau_{i-1} \tau_{j-1} C_R(\tau_{i-1}, \tau_{j-1}) - \tau_i \tau_{j-1} C_R(\tau_i, \tau_{j-1}) - \tau_{i-1} \tau_j C_R(\tau_{i-1},\tau_j) \right] .
+$$
+
+<h2>Covariance Function Examples</h2>
 
 The curve shape is solely determined by the covariance matrix $\vSigma$ of forward rate movements. Some special cases are summarized below.
 
