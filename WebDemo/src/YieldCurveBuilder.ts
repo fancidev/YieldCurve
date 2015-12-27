@@ -127,11 +127,15 @@ function fitYieldCurve(model: YieldCurveModel, instruments: Instrument[], market
 			
         // Check tolerance.
         const diff = numeric.sub(marketRates, impliedRates);
-        const maxDiff = Math.max.apply(null, diff.map(Math.abs));
-        const eps = 1.0e-8; // 0.0001 bp
-        if (maxDiff < eps) {
-            console.log('Newton method found solution in ' + iter + ' iterations.');
-            return discount;
+        if (iter > 1) {
+            // Perform at least one iteration in order to fit model-specific
+            // linear constraints exactly.
+            const maxDiff = Math.max.apply(null, diff.map(Math.abs));
+            const eps = 1.0e-8; // 0.0001 bp
+            if (maxDiff < eps) {
+                console.log('Newton method found solution in ' + iter + ' iterations.');
+                return discount;
+            }
         }
         const b = diff;
 		
