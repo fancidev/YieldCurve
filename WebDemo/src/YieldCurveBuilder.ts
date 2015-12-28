@@ -70,6 +70,10 @@ interface YieldCurveModelTemplate {
     createModel(instruments: Instrument[]): YieldCurveModel;
 }
 
+interface YieldCurveFittingOptions {
+    numIter?: int; // output
+}
+
 /**
  * Fits the given yield curve model to observed market rates of a
  * set of instruments.
@@ -83,7 +87,11 @@ interface YieldCurveModelTemplate {
  * @param instruments  Instrument definitions
  * @param marketRates  Observed rates of these instruments
  */
-function fitYieldCurve(model: YieldCurveModel, instruments: Instrument[], marketRates: number[]): Discount {
+function fitYieldCurve(
+    model: YieldCurveModel,
+    instruments: Instrument[],
+    marketRates: number[],
+    options?: YieldCurveFittingOptions): Discount {
 
     const state = model.state();
     const p = state.length;
@@ -144,6 +152,9 @@ function fitYieldCurve(model: YieldCurveModel, instruments: Instrument[], market
             const eps = 1.0e-8; // 0.0001 bp
             if (maxDiff < eps) {
                 console.log('Newton method found solution in ' + iter + ' iterations.');
+                if (options) {
+                    options.numIter = iter;
+                }
                 return discount;
             }
         }
