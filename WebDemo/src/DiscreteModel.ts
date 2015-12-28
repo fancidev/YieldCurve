@@ -124,24 +124,29 @@ function ZcCovarToFwdCovar(C: CovarianceFunction, delta: number): CovarianceFunc
     };
 }
 
-function ConstantCovar(rho = 0) {
+function ConstantCovar(rho: number) {
     return (s: number, t: number) => (s === t) ? 1 : rho;
 }
 
-function ExponentialCovar(k = 1) {
-    return (s: number, t: number) => Math.exp(-k * Math.abs(s - t));
+function ExponentialCovar(rho: number) {
+    return (s: number, t: number) => rho ** Math.abs(s - t);
 }
 
-function GaussianCovar(k = 2) {
-    return (s: number, t: number) => Math.exp(-k * (s - t) * (s - t));
+function GaussianCovar(rho: number) {
+    return (s: number, t: number) => rho ** ((s - t) * (s - t));
 }
 
 const discreteModelTemplates = [
-    new DiscreteModelTemplate('Discrete (i.i.d. log df)', 30, 0.25, LogDfCovarToFwdCovar(ConstantCovar(0), 0.25)),
-    new DiscreteModelTemplate('Discrete (i.i.d. zc)', 30, 0.25, ZcCovarToFwdCovar(ConstantCovar(0), 0.25)),
-    new DiscreteModelTemplate('Discrete (exp zc)', 30, 0.25, ZcCovarToFwdCovar(ExponentialCovar(0.5), 0.25)),
     new DiscreteModelTemplate('Discrete (i.i.d. fwd)', 30, 0.25, ConstantCovar(0)),
-    new DiscreteModelTemplate('Discrete (const fwd)', 30, 0.25, ConstantCovar(0.5)),
-    new DiscreteModelTemplate('Discrete (exp fwd)', 30, 0.25, ExponentialCovar(1)),
-    new DiscreteModelTemplate('Discrete (exp^2 fwd)', 30, 0.25, GaussianCovar(2)),
+    new DiscreteModelTemplate('Discrete (i.i.d. zc)', 30, 0.25, ZcCovarToFwdCovar(ConstantCovar(0), 0.25)),
+    new DiscreteModelTemplate('Discrete (i.i.d. log df)', 30, 0.25, LogDfCovarToFwdCovar(ConstantCovar(0), 0.25)),
+    new DiscreteModelTemplate('Discrete (const fwd)', 30, 0.25, ConstantCovar(0.75)),
+    new DiscreteModelTemplate('Discrete (const zc)', 30, 0.25, ZcCovarToFwdCovar(ConstantCovar(0.75), 0.25)),
+    new DiscreteModelTemplate('Discrete (const log df)', 30, 0.25, LogDfCovarToFwdCovar(ConstantCovar(0.75), 0.25)),
+    new DiscreteModelTemplate('Discrete (exp fwd)', 30, 0.25, ExponentialCovar(0.75)),
+    new DiscreteModelTemplate('Discrete (exp zc)', 30, 0.25, ZcCovarToFwdCovar(ExponentialCovar(0.75), 0.25)),
+    new DiscreteModelTemplate('Discrete (exp log df)', 30, 0.25, LogDfCovarToFwdCovar(ExponentialCovar(0.75), 0.25)),
+    new DiscreteModelTemplate('Discrete (exp^2 fwd)', 30, 0.25, GaussianCovar(0.1)),
+    new DiscreteModelTemplate('Discrete (exp^2 zc)', 30, 0.25, ZcCovarToFwdCovar(GaussianCovar(0.1), 0.25)),
+    new DiscreteModelTemplate('Discrete (exp^2 log df)', 30, 0.25, LogDfCovarToFwdCovar(GaussianCovar(0.1), 0.25)),
 ];

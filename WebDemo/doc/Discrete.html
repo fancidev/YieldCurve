@@ -74,19 +74,46 @@ $$
 
 <h2>Covariance Function Examples</h2>
 
-The curve shape is solely determined by the covariance matrix $\vSigma$ of forward rate movements. Some special cases are summarized below.
+<p>
+The curve shape is solely determined by the covariance matrix $\vSigma$ of forward rate movements. Some special cases are summarized below. ($\rho$ may be interpreted as correlation per annum if variances are equal; in all examples below $\rho = 0.75$ except in the Gaussian case where $\rho = 0.10$ as any larger value causes numerical error.)
 
-<p><b>i.i.d. forward rate.</b> This produces the <i>same</i> curve as natural cubic spline interpolation, featuring a smooth forward curve and non-local bump response. This is the method used in a 1994 paper.
-
-<p><b>i.i.d. zero-coupon rate.</b> This produces an ugly zig-zag forward curve, but linear-ish bump response.
-
-<p><b>i.i.d. log-discount factor (i.e. $F$).</b> This produces something close to a piece-wise flat forward curve, with linear-ish bump response.
-
-<p><b>Constant correlation (forward rates).</b> $C(s, t) = I(s = t) + I(s \ne t) \rho$. This produces an undesirable forward curve that tilts up at long end. The bump response is non-local.
-
-<p><b>Exponential correlation (forward rates).</b> $C(s, t) = \exp (-k|s-t|)$. The curve looks like natural cubic spline, but has stronger propagation in bump response.
-
-<p><b>Gaussian correlation (forward rates).</b> $C(s, t) = \exp (-k(s-t)^2)$. Similar to natural cubic spline when $k$ is large, and fails to compute due to numerical error when $k$ is small.
+<table border="1">
+<tr>
+  <th>Cov</th>
+  <th>$C(s,t)$</th>
+  <th style="width: 30%">Applied to Fwd</th>
+  <th style="width: 30%">Applied to ZC</th>
+  <th style="width: 30%">Applied to Log DF</th>
+</tr>
+<tr>
+  <td>i.i.d.</td>
+  <td>$I(s=t)$</td>
+  <td>Identical curve as natural cubic spline, featuring a smooth forward curve and non-local bump response.</td>
+  <td>Ugly zig-zag forward curve, but linear-ish bump response.</td>
+  <td>Close to a piece-wise flat forward curve, with linear-ish bump response.</td>
+</tr>
+<tr>
+  <td>Constant</td>
+  <td>$\rho + (1-\rho) I(s=t)$</td>
+  <td>Undesirable forward curve that tilts up at long end, with non-local bump response.</td>
+  <td>Similar to i.i.d. ZC but forward curve long end is more convex.</td>
+  <td>Similar to i.i.d. log df.</td>
+</tr>
+<tr>
+  <td>Exponential</td>
+  <td>$\rho^{|s-t|}$</td>
+  <td>Looks like natural cubic spline, but much stronger bump response propagation.</td>
+  <td>Really bizarre, bi-modal forward curve.</td>
+  <td>Fairly smooth forward curve and less propagation than cubic spline, but forward curve is concave at long-end, which is less intuitive.</td>
+</tr>
+<tr>
+  <td>Gaussian</td>
+  <td>$\rho^{(s-t)^2}$</td>
+  <td>Close to natural cubic spline when $\rho$ is small, but even a moderate correlation leads to numerical failure.</td>
+  <td>Really terrible forward curve, more bizarre than the exponential one.</td>
+  <td>A smoothened version of i.i.d. log df; not quite realistic forward curve with ideal, linearish bump response.</td>
+  </tr>
+</table>
 
 </body>
 </html>  
