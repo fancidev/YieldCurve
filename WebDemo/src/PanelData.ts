@@ -121,8 +121,8 @@ function covariance(table: PanelData): DataFrame<string, string> {
 		for (let j = i; j < nvar; j++) {
 			let sumX = 0, sumY = 0, sumXY = 0, count = 0;
 			for (let k = 0; k < nobs; k++) {
-				const x = table[i][k];
-				const y = table[j][k];
+				const x = table[k][i];
+				const y = table[k][j];
 				if (isFinite(x) && isFinite(y)) {
 					sumX += x;
 					sumY += y;

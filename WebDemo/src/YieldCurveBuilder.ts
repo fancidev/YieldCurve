@@ -68,6 +68,15 @@ interface YieldCurveModelTemplate {
 	 *                     from this array.
 	 */
     createModel(instruments: Instrument[]): YieldCurveModel;
+    
+    /**
+     * Returns the model covariance matrix between state variables.
+     * If this member exists, it allows the caller to directly
+     * modify the model. For example, calibrateYieldCurveModel()
+     * works by fitting this model covariance matrix to historical
+     * covariance between model-implied state variables.
+     */
+    covariance?(): number[][];
 }
 
 interface YieldCurveFittingOptions {
@@ -151,7 +160,7 @@ function fitYieldCurve(
             const maxDiff = Math.max.apply(null, diff.map(Math.abs));
             const eps = 1.0e-8; // 0.0001 bp
             if (maxDiff < eps) {
-                console.log('Newton method found solution in ' + iter + ' iterations.');
+                // console.log('Newton method found solution in ' + iter + ' iterations.');
                 if (options) {
                     options.numIter = iter;
                 }
@@ -187,4 +196,73 @@ function fitYieldCurve(
 
     alert('Newton method cannot find solution');
     throw new Error('Newton method cannot find solution');
+}
+
+/**
+ * Calibrates a yield curve model by matching model covariance matrix
+ * to historical covariance between the model's state variables.
+ */
+function calibrateYieldCurveModel(
+    modelTemplate: YieldCurveModelTemplate,
+    instruments: Instrument[],
+    marketRates: PanelData) {
+
+    const numDates = numRows(marketRates);
+    const numSeries = numCols(marketRates);
+    if (numSeries !== instruments.length)
+        throw new RangeError('Instruments must match marketRates in size');
+
+    for (let iter = 1; iter < 50; iter++) {
+		
+        // Fit the model to historical data to get state vector time series.
+        const stateHistory: PanelData = new Array<Array<number>>();
+        const usedInstruments = instruments.slice();
+        const model = modelTemplate.createModel(usedInstruments);
+        for (let i = 0; i < numDates; i++) {
+            const usedMarketRates = marketRates[i].slice();
+            for (let j = usedMarketRates.length - 1; j >= 0; j--) {
+                if (usedInstruments.indexOf(instruments[j]) < 0)
+                    usedMarketRates.splice(j, 1);
+            }
+            fitYieldCurve(model, usedInstruments, usedMarketRates);
+            stateHistory[i] = model.state().slice();
+        }
+		
+        // Compute the historical covariance matrix of state vector.
+        stateHistory.rownames = marketRates.rownames;
+        const stateDiff = diff(stateHistory);
+        const covar = covariance(stateDiff);
+        numeric.muleq(covar, 250);
+		
+        // Debug print.
+        const volatility = getStdev(covar);
+        console.log('Realized state variable volatility:');
+        console.log(numeric.prettyPrint(volatility));
+        const correl = getCorrelation(covar);
+        console.log('Realized state variable correlation:');
+        console.log(numeric.prettyPrint(correl));
+		
+        // Compare the historical covariance against the model covariance.
+        const modelCovar = modelTemplate.covariance();
+        const nf = modelCovar.length;
+        let maxDiff = -Infinity;
+        for (let i = 0; i < nf; i++) {
+            for (let j = 0; j < nf; j++) {
+                maxDiff = Math.max(maxDiff, Math.abs(covar[i][j] - modelCovar[i][j]));
+            }
+        }
+        if (maxDiff < 1e-6) { // 0.1% tolerance on volatility
+            alert('Calibration finished in ' + iter + ' iterations.');
+            return;
+        }
+	
+        // Update model covariance and then continue iteration.
+        for (let i = 0; i < nf; i++) {
+            for (let j = 0; j < nf; j++) {
+                modelCovar[i][j] = covar[i][j];
+            }
+        }
+    }
+    alert('Calibration failed to converge');
+    throw new Error('Calibration failed to converge');
 }

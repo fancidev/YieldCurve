@@ -136,7 +136,30 @@ function GaussianCovar(rho: number) {
     return (s: number, t: number) => rho ** ((s - t) * (s - t));
 }
 
+function ExplicitCovar(ts: number[], covarMatrix: number[][]) {
+    return (s: number, t: number) => covarMatrix[ts.indexOf(s)][ts.indexOf(t)];
+}
+
+class DiscreteNonParModelTemplate extends DiscreteModelTemplate {
+
+    private covarMatrix: number[][]; // covariance between F
+
+    constructor(name: string, maturity: number, interval: number) {
+        const n = maturity / interval;
+        const ts = numeric.linspace(0, maturity, n + 1);
+        const covarMatrix = numeric.identity(n + 1);
+        covarMatrix[0][0] = 0;
+        super(name, maturity, interval, LogDfCovarToFwdCovar(ExplicitCovar(ts, covarMatrix), interval));
+        this.covarMatrix = covarMatrix;
+    }
+
+    covariance() {
+        return this.covarMatrix;
+    }
+}
+
 const discreteModelTemplates = [
+    new DiscreteNonParModelTemplate('Discrete Non Par', 30, 0.25),
     new DiscreteModelTemplate('Discrete (i.i.d. fwd)', 30, 0.25, ConstantCovar(0)),
     new DiscreteModelTemplate('Discrete (i.i.d. zc)', 30, 0.25, ZcCovarToFwdCovar(ConstantCovar(0), 0.25)),
     new DiscreteModelTemplate('Discrete (i.i.d. log df)', 30, 0.25, LogDfCovarToFwdCovar(ConstantCovar(0), 0.25)),

@@ -240,7 +240,7 @@ $(function () {
 		// Enable calibration button if the model supports it.
 		var toolbar = $("#toolbar").data("kendoToolBar");
 		var btnCalibrate = $("#btnCalibrate");
-		var shouldEnable = modelTemplate.calibrate ? true : false;
+		var shouldEnable = modelTemplate.calibrate || modelTemplate.covariance ? true : false;
 		toolbar.enable(btnCalibrate, shouldEnable);
 	}
 	
@@ -287,6 +287,13 @@ $(function () {
 			try {
 				modelTemplate.calibrate(instruments, panel);
 			} catch (error) {
+			}
+		}
+		else if (modelTemplate.covariance) {
+			try {
+				calibrateYieldCurveModel(modelTemplate, instruments, panel);
+			} catch (error) {
+				alert('Error: ' + error);
 			}
 		}
 		refreshTermStructure();
