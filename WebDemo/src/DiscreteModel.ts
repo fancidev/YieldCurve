@@ -140,6 +140,14 @@ function ExplicitCovar(ts: number[], covarMatrix: number[][]) {
     return (s: number, t: number) => covarMatrix[ts.indexOf(s)][ts.indexOf(t)];
 }
 
+function CombineCovar(covar1: CovarianceFunction, covar2: CovarianceFunction) {
+    return (s: number, t: number) => covar1(s, t) + covar2(s, t);
+}
+
+function ScaleCovar(covar: CovarianceFunction, scale: number) {
+    return (s: number, t: number) => covar(s, t) * scale;
+}
+
 class DiscreteNonParModelTemplate extends DiscreteModelTemplate {
 
     private covarMatrix: number[][]; // covariance between F
@@ -149,7 +157,9 @@ class DiscreteNonParModelTemplate extends DiscreteModelTemplate {
         const ts = numeric.linspace(0, maturity, n + 1);
         const covarMatrix = numeric.identity(n + 1);
         covarMatrix[0][0] = 0;
-        super(name, maturity, interval, LogDfCovarToFwdCovar(ExplicitCovar(ts, covarMatrix), interval));
+        const c1 = LogDfCovarToFwdCovar(ExplicitCovar(ts, covarMatrix), interval);
+        const c2 = ScaleCovar(ConstantCovar(0), 0.0001);
+        super(name, maturity, interval, CombineCovar(c1, c2));
         this.covarMatrix = covarMatrix;
     }
 
