@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Discrete Model</title>
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        inlineMath: [['$','$'], ['\\(','\\)']]
+      }
+      //, CommonHTML: {
+      //  linebreaks: {
+      //    automatic: true 
+      //  } 
+      // }
+    });
+    </script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"/>
+    <style>
+    .main-container {
+      // color: black
+    }
+    </style>
+  </head>
+  <body>
+    <div class="container main-container">
+
+<div style="display: none">
+$$
+\newcommand{\vA}{\mathbf{A}}
+\newcommand{\vH}{\mathbf{H}}
+\newcommand{\vL}{\mathbf{L}}
+\newcommand{\vP}{\mathbf{P}}
+\newcommand{\vb}{\mathbf{b}}
+\newcommand{\vq}{\mathbf{q}}
+\newcommand{\vx}{\mathbf{x}}
+\newcommand{\vy}{\mathbf{y}}
+\newcommand{\vSigma}{\boldsymbol{\Sigma}}
+\newcommand{\vdelta}{\boldsymbol{\delta}}
+\newcommand{\vlambda}{\boldsymbol{\lambda}}
+\newcommand{\vmu}{\boldsymbol{\mu}}
+\newcommand{\vzero}{\mathbf{0}}
+\newcommand{\Cov}{\mathrm{Cov}}
+$$
+</div>
+<h1>Discrete Model</h1>
+<hr/>
+<p>This is a simple model that discretize the forward curve into a few points and optimize a simple quadratic form.
+
+<h2>Model</h2>
+
+<p>Divide the horizon $[0, T]$ into $n$ equal periods of length $\delta = T / n$, and label $0 = \tau_0 < \tau_1 < \cdots < \tau_n = T$. Let $f_i$, $1 \le i \le n$ be the forward rate applied to period $(\tau_{i-1}, \tau_i)$. Let $\vSigma_{(n-1)\times(n-1)}$ be the instantaneous covariance matrix of the first $(n-1)$ forward rates. Let $\mu_i = f_{i+1} - f_i$, $1 \le i \le n-1$ be the (discretized) slope of the forward curve. We optimize the quadratic form
+$$
+\frac{1}{2} \vmu^T \vSigma^{-1} \vmu
+$$
+subject to the usual market rate constraints.
+
+<p>To use the Newton solver, let the state vector be $\vx \triangleq (F_0, F_1, \cdots, F_n)^T$ where $F_k \triangleq -\ln P(\tau_k) = \sum_{i=1}^k f_i \delta$ and $F_0 \equiv 0$. Then $f_i = (F_i - F_{i-1}) / \delta$ and $\mu_i = (F_{i+1} - 2 F_i + F_{i-1}) / \delta$. So
+$$
+\vmu \propto \begin{bmatrix}
+1 & -2 &  1          \\
+  &  1 & -2 & 1      \\
+  &    &    & \ddots \\
+  &    &    &      1 & -2 & 1 
+\end{bmatrix} 
+\begin{bmatrix}
+F_0 \\ F_1 \\ \vdots \\ F_n 
+\end{bmatrix}
+.
+$$
+Writing $\vmu \triangleq \vL \vx$ where $\vL$ is defined above, the quadratic objective is $\vL^T \vSigma^{-1} \vL$. We then use the Newton solver to fit the model.
+
+<h2>Covariance Conversions</h2>
+
+<p>The model natively takes as input forward rate covariance $C_f(\tau_i, \tau_j) \equiv \Cov[\Delta f_i, \Delta f_j]$. 
+
+<p>If the covariance between log-discount factors $C_F(\tau_i, \tau_j) \equiv \Cov[\Delta F_i, \Delta F_j]$ are known, we can compute $C_f$ as
+$$
+C_f(\tau_i, \tau_j) = \frac{1}{\delta^2} \left[ C_F(\tau_i, \tau_j) + C_F(\tau_{i-1}, \tau_{j-1}) - C_F(\tau_i, \tau_{j-1}) - C_F(\tau_{i-1},\tau_j) \right] .
+$$
+
+<p>If the covariance between zero-coupon rates $C_R(\tau_i, \tau_j) \equiv \Cov[\Delta R_i, \Delta R_j]$ are known, we can compute $C_f$ as
+$$
+C_f(\tau_i, \tau_j) = \frac{1}{\delta^2} \left[ \tau_i \tau_j C_R(\tau_i, \tau_j) + \tau_{i-1} \tau_{j-1} C_R(\tau_{i-1}, \tau_{j-1}) - \tau_i \tau_{j-1} C_R(\tau_i, \tau_{j-1}) - \tau_{i-1} \tau_j C_R(\tau_{i-1},\tau_j) \right] .
+$$
+
+<h2>Covariance Function Examples</h2>
+
+<p>
+The curve shape is solely determined by the covariance matrix $\vSigma$ of forward rate movements. Some special cases are summarized below. ($\rho$ may be interpreted as correlation per annum if variances are equal; in all examples below $\rho = 0.75$ except in the Gaussian case where $\rho = 0.10$ as any larger value causes numerical error.)
+
+<table class="table">
+<tr>
+  <th>Cov: $C(s,t)$</th>
+  <th style="width: 30%">Applied to Fwd</th>
+  <th style="width: 30%">Applied to ZC</th>
+  <th style="width: 30%">Applied to Log DF</th>
+</tr>
+<tr>
+  <th>i.i.d.: $I(s=t)$</th>
+  <td>Identical curve as natural cubic spline, featuring a smooth forward curve and non-local bump response.</td>
+  <td>Ugly zig-zag forward curve, but linear-ish bump response.</td>
+  <td>Close to a piece-wise flat forward curve, with linear-ish bump response.</td>
+</tr>
+<tr>
+  <th>Constant: $\rho + (1-\rho)I(s=t)$</th>
+  <td>Undesirable forward curve that tilts up at long end, with non-local bump response.</td>
+  <td>Similar to i.i.d. ZC but forward curve long end is more convex.</td>
+  <td>Similar to i.i.d. log df.</td>
+</tr>
+<tr>
+  <th>Exponential: $\rho^{|s-t|}$</th>
+  <td>Looks like natural cubic spline, but much stronger bump response propagation.</td>
+  <td>Really bizarre, bi-modal forward curve.</td>
+  <td>Fairly smooth forward curve and less propagation than cubic spline, but forward curve is concave at long-end, which is less intuitive.</td>
+</tr>
+<tr>
+  <th>Gaussian: $\rho^{(s-t)^2}$</th>
+  <td>Close to natural cubic spline when $\rho$ is small, but even a moderate correlation leads to numerical failure.</td>
+  <td>Really terrible forward curve, more bizarre than the exponential one.</td>
+  <td>A smoothened version of i.i.d. log df; not quite realistic forward curve with ideal, linearish bump response.</td>
+  </tr>
+</table>
+
+    </div><!-- /.container -->
+  </body>
+</html>  

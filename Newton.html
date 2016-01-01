@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Newton Solver</title>
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        inlineMath: [['$','$'], ['\\(','\\)']]
+      }
+    });
+    </script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"/>
+    <style>
+    .main-container {
+      // color: black
+    }
+    </style>
+  </head>
+  <body>
+    <div class="container main-container">
+    
+<div style="display: none">
+$$
+\newcommand{\vA}{\mathbf{A}}
+\newcommand{\vH}{\mathbf{H}}
+\newcommand{\vJ}{\mathbf{J}}
+\newcommand{\vP}{\mathbf{P}}
+\newcommand{\vb}{\mathbf{b}}
+\newcommand{\vq}{\mathbf{q}}
+\newcommand{\vx}{\mathbf{x}}
+\newcommand{\vy}{\mathbf{y}}
+\newcommand{\vdelta}{\mathbf{\delta}}
+\newcommand{\vlambda}{\mathbf{\lambda}}
+\newcommand{\vzero}{\mathbf{0}}
+$$
+</div>
+<h1>Newton Solver</h1>
+<hr/>
+<p>We use <a href="https://en.wikipedia.org/wiki/Newton%27s_method">Newton's method</a> to fit a yield curve model to market rates. This page describes the implementation.
+
+<p>Given a yield curve model, let $\vx$ be a vector of its state variables. Let the number of state variables be $p$. Fitting the model means solving this state vector according to certain constraints and objectives.
+
+<h2>Market Rate Constraints</h2>
+
+<p>Given a model with state vector $\vx$, let an instrument be represented by a function $\hat{y} = f(\vx)$ that takes the state vector as input and produces a <i>model rate</i> as output. Let $y$ denote the observed <i>market rate</i> for this instrument. Using Newton's method, we assume the function is linear at point $\vx$, such that 
+$$
+f(\vx + \Delta \vx) = f(\vx) + \frac{\partial f}{\partial \vx} \Delta \vx
+$$
+where $\partial f / \partial \vx$ is a row gradient vector of $f$ with respect to the state vector. We require the implementation of each instrument to supply explicit first-order derivatives.
+
+<p>Let $n$ be the number of market rates to fit to. For $1 \le i \le n$, let instrument $i$ be represented by a function $f_i(\vx)$. When we have $n$ market rates, this forms $n$ linear constraints.
+
+<p>If the number of instruments is equal to the number of state variables, the model can be fit by an iterative approach as follows. Start from an initial guess $\vx_0 = \mathbf{0}$. Given a guess $\vx_k$, let $\hat{\vy}_k = ( f_1(\vx_k), \cdots, f_n(\vx_k) )^T$ be the vector of model rates. Let $\vy$ be the vector of market rates. To make the next guess, solve the linear system
+$$
+\vJ_k \Delta \vx_k = \vy - \hat{\vy}_k
+$$
+for $\Delta \vx_k$, where $\vJ_k \triangleq (\partial f_1 / \partial \vx, \cdots, \partial f_n / \partial \vx)^T (\vx_k)$ is the Jacobian matrix of the instruments to the state vectors evaluated at $\vx_k$. Then $\vx_{k+1} = \vx_k + \Delta \vx_k$ is the refined guess.
+
+<p>
+Repeat this process until the maximum error is smaller than a threshold, i.e. $||\hat{\vy}_k - \vy||_{\infty} < \epsilon$. We typically set $\epsilon$ to 0.0001 basis-point. When the state vectors are indeed linear-ish in market rates, the algorithm typically converges in 3 to 5 iterations.
+
+<h2>Model-Specific Linear Constraints</h2>
+
+<p>If there are more state variables than the number of market rate constraints, i.e. $n < p$, we allow the model to supply its own linear constraints on the state variables. This is used for example in B-Spline fitting to impose constraints on the derivatives at end-points. 
+
+<p>Let $m$ be the number of model-specific linear constraints. They take the form $\vP \vx = \vq$ where $\vP$ and $\vq$ each contains $m$ rows. In an iterative setting, they form $m$ additional linear equations:
+$$
+\vP \Delta \vx_k = \vq - \vP \vx_k .
+$$
+These model-specific linear constraints are fit exactly in each iteration.
+
+<p>It is convenient to combine the market rate constraints and model-specific constraints into a single set of linear equations, $\vA_k \Delta \vx_k = \vb_k$, where
+$$
+\vA_k = \begin{bmatrix} \vJ_k \\ \vP \end{bmatrix}, \,
+\vb_k = \begin{bmatrix} \vy - \hat{\vy}_k \\ \vq - \vP \vx_k \end{bmatrix} .
+$$
+
+<h2>Quadratic Objective</h2>
+
+<p>If there are still more state variables than the number of market rates and model-specific linear constraints combined, i.e. $n + m \lt p$, we require the model to supply a quadratic form of the state vector to minimize. That is, the model must supply a $p$-by-$p$ symmetric nonnegative-definite matrix $\vH$, and we optimize
+$$
+\min_{\vx} \frac{1}{2} \vx^T \vH \vx 
+$$
+subject to the market rate constraints and model-specific linear constraints.
+
+<p>In step $k$ of an iteration, we optimize the equivalent objective (omitting subscript $k$ for clarity)
+$$
+\min_{\Delta \vx} \frac{1}{2} (\Delta \vx)^T \vH (\Delta \vx) + (\Delta \vx)^T \vH \vx
+$$
+subject to $\vA \Delta \vx = \vb$.
+
+Using standard Lagrange method, we form the unconstrained problem
+$$
+z = \frac{1}{2} (\Delta \vx)^T \vH (\Delta \vx) + (\Delta \vx)^T \vH \vx + \vlambda^T ( \vA \Delta \vx - \vb ) .
+$$
+Setting $\partial z / \partial \Delta \vx = 0$ yields
+$$
+\vH \Delta \vx + \vA^T \vlambda = -\vH \vx .
+$$
+Setting $\partial x / \partial \vlambda = 0$ yields
+$$
+\vA \Delta \vx = \vb .
+$$
+Combining them, we solve the system
+$$
+\begin{bmatrix}
+\vH & \vA^T \\
+\vA & \mathbf{0}
+\end{bmatrix}
+\begin{bmatrix}
+\Delta \vx \\ \vlambda
+\end{bmatrix}
+=
+\begin{bmatrix}
+-\vH \vx \\ \vb
+\end{bmatrix}
+.
+$$
+This is a system of $p+n+m$ equations. Note that $\vH$ may not be invertible, so the system must be solved as a whole.
+<!-- In particular, if the model can already be fit using the market inputs and model-specific linear constraints, then simply set $\vH = \vzero$. We may simplify the problem a little by removing the equations that correspond to rows in $\vH$ where all elements are zero. This reduces the number of unknowns to solve.-->
+
+    </div><!-- /.container -->
+  </body>
+</html>

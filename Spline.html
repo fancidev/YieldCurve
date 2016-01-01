@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Spline Model</title>
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        inlineMath: [['$','$'], ['\\(','\\)']]
+      }
+    });
+    </script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"/>
+    <style>
+    .main-container {
+      // color: black
+    }
+    </style>
+  </head>
+  <body>
+    <div class="container main-container">
+    
+<div style="display: none">
+$$
+\newcommand{\d}{\mathrm{d}}
+\newcommand{\vA}{\mathbf{A}}
+\newcommand{\vH}{\mathbf{H}}
+\newcommand{\vJ}{\mathbf{J}}
+\newcommand{\vP}{\mathbf{P}}
+\newcommand{\vb}{\mathbf{b}}
+\newcommand{\vq}{\mathbf{q}}
+\newcommand{\vx}{\mathbf{x}}
+\newcommand{\vy}{\mathbf{y}}
+\newcommand{\vdelta}{\mathbf{\delta}}
+\newcommand{\vlambda}{\mathbf{\lambda}}
+\newcommand{\vzero}{\mathbf{0}}
+$$
+</div>
+<h1>Spline Model</h1>
+<hr/>
+
+<p>With the spline method, we interpolate the input rates by a spline. Specifically, we interpolate the log-discount factor curve, $F$, where $F(t) \triangleq -\ln P(t) = \int_0^t f(s) \, \d s$ where $f(t)$ is the instantaneous forward rate. We then use a <a href="Newton.html">Newton solver</a> to fit the implied swap rates (produced by the spline) to the observed swap rates (input by the user).
+
+<p><a href="http://quantlib.org/reference/group__interpolations.html">QuantLib</a> is a open source library for financial modelling and contains a breadth of interpolation methods, including spline methods. The spline method enforces the derivative at knot points to be continuous up to (the spline's degree minus one)'s order. QuantLib also contains other interpolation methods, such as monotonic interpolation, that do not require such a high level of smoothness.
+
+<p><a href="http://www.math.ku.dk/~rolf/HaganWest.pdf">Hagan and West</a> gives a good review of yield curve interpolation methods.
+
+<p>In this implementation we use <a href="http://mathworld.wolfram.com/B-Spline.html">B-Spline</a> as the basis for interpolation. This has the merit that the constructed curve is automatically continuous to the desired degree, and is said to be numerically stable. In addition, changing the spline's degree is as simple as changing a single parameter, instead of writing a new source file. The B-spline method is used in ((some other paper to be filled)).
+
+<p>We summarize the B-Spline formulas below. Let $(x_0, x_1, \ldots, x_{n-1})$ be a numeric vector of $n$ elements, known as the <i>knot vector</i>. The knots must be non-decreasing but may repeat; a knot that repeats is known as <i>multiplicity knot</i>. Let $p$ be the degree of the spline; it is the degree of the interpolating polynomial within each (non-empty) interval. (For example $p = 1$ means linear spline, $p = 3$ means cubic spline.)
+
+<p>Now define B-Spline basis functions as follows. Given the knot points, let $N_{p,i}(x)$ denote the $i$-th basis function of a $p$-degree b-spline. We define
+$$
+N_{0,i}(x) = 
+\begin{cases} 
+1 & \text{if $x_i \le x \lt x_{i+1}$,} & \text{(right-continuous at knots)} \\
+1 & \text{if $x_i \lt x = x_{i+1} = x_{n-1}$,} & \text{(left-continuous at the last knot)} \\
+0 & \text{otherwise.} &
+\end{cases}
+$$
+and
+$$
+N_{p,i}(x) = w_{p,i}(x) N_{p-1,i}(x) + (1 - w_{p,i+1}(x)) N_{p-1,i+1}(x)
+$$
+where 
+$$
+w_{p,i}(x) = 
+\begin{cases}
+(x - x_i) / (x_{i+p} - x_i) & \text{if $x_i < x_{i+p}$;} \\
+0 & \text{otherwise.} \\
+\end{cases}
+$$
+
+<p>The first-order derivative of a basis function is found to be 
+$$
+\frac{\d}{\d x} N_{p,i}(x) = v_{p,i} N_{p-1,i}(x) - v_{p,i+1}(x) N_{p-1,i+1}(x) ,
+$$
+where $v_{p,i} = p / (x_{i+p} - x_i)$ if the denominator is not zero;
+$p$ otherwise.
+Higher-order derivatives can be found recursively.
+
+<p>In practice, we start with $m$ observed (non-duplicate) knots, and add $p$ multiplicity knots to the beginning and $p$ multiplicity knots to the end, so that each non-empty interval is covered by exactly $(p + 1)$ spline bases. This gives a total number of $(m + p - 1)$ spline bases. When the spline's values are known at the knot points, as is in our curve fitting case, we impose $(p - 1)$ additional constraints on the derivatives of the spline to get a unique solution.
+
+<p>Experiment shows that linear interpolation and natural cubic spline (on log-discount factors) appear to be most appropriate. Linear interpolation is extremely simple, and produces an extremely simple bump response curve. (A bump response curve shows how much each maturity moves after bumping one input by one basis-point.) Natural cubic spline is known to be the smoothest interpolant when smoothness is quantified by the integral of second-order derivative. And it indeed produces a smooth instantaneous forward curve. But its bump response is too strong for maturities in the middle of two adjacent but far-apart knot points.
+
+
+    </div><!-- /.container -->
+  </body>
+</html>
