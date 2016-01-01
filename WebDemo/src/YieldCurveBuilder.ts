@@ -212,7 +212,7 @@ function calibrateYieldCurveModel(
     if (numSeries !== instruments.length)
         throw new RangeError('Instruments must match marketRates in size');
 
-    for (let iter = 1; iter < 50; iter++) {
+    for (let iter = 1; iter < 10; iter++) {
 		
         // Fit the model to historical data to get state vector time series.
         const stateHistory: PanelData = new Array<Array<number>>();
@@ -262,6 +262,9 @@ function calibrateYieldCurveModel(
                 modelCovar[i][j] = covar[i][j];
             }
         }
+        
+        // Temporary hack: do 1 iteration only.
+        return;
     }
     alert('Calibration failed to converge');
     throw new Error('Calibration failed to converge');
