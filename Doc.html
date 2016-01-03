@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" href="favicon.png">
-    <title>Yield Curve Demo</title>
+    <title>Docs - Yield Curve Demo</title>
 
     <!-- Bootstrap -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
@@ -29,7 +29,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="#">Yield Curve Demo</a>
+          <a class="navbar-brand" href="index.html">Yield Curve Demo</a>
         </div>
         <div id="navbar" class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
@@ -52,40 +52,29 @@
       </div>
     </nav>
 
-    <div class="jumbotron">
-      <div class="container">
-        <h1>Yield Curve Demo</h1>
-        <p>Demonstrates methods to build a yield curve.</p>
-	<p><a class="btn btn-primary btn-lg" href="Demo.html" role="button">Open demo &raquo;</a></p>
-      </div>
-    </div>
-
     <div class="container">
     
-      <!--
-      <div class="main-container bg-info">
-        <h1>Yield Curve Demo</h1>
-        <p class="lead">Demonstrates methods to build a yield curve.</p>
+      <div>
+        <h1>Yield Curve Demo Docs</h1>
+        <p class="lead">Description of yield curve models and numeric methods.</p>
       </div>
-      -->
       
-      <div class="row">
-        <div class="col-md-4">
-          <h2>Demo</h2>
-          <p>This interactive demo builds the US swap rate curve using three types of models: spline, Vasicek, and discrete. The fitted swap, zero-coupon, and forward curves are shown along with their bump response profile. Over 10 years of daily historical data are available for back-testing and calibration.</p>
-          <p><a class="btn btn-default" href="Demo.html" role="button">Open demo &raquo;</a></p>
-        </div>
-        <div class="col-md-4">
-          <h2>Docs</h2>
-          <p>This section contains a mathematical description of the yield curve models and numerical methods used in this demo. In addition, for each model type we provide a summary of the features of different parameterizations. Links to wikipedia pages and references to published papers are (to be) included.</p>
-          <p><a class="btn btn-default" href="Doc.html" role="button">View docs &raquo;</a></p>
-       </div>
-        <div class="col-md-4">
-          <h2>Code</h2>
-          <p>The source code of the interactive demo as well as the web content is hosted on github under the MIT license. The demo is written entirely in Javascript and runs in the browser. A collection of tools and libraries are used, including bootstrap, canvasjs, jQuery, mathjax, numericjs, and typescript.</p>
-          <p><a class="btn btn-default" href="https://github.com/fancidev/YieldCurve" role="button">View code &raquo;</a></p>
-        </div>
-      </div>
+      <hr>
+      
+      <p>A yield curve model takes as input a set of observed swap rates of different maturities on a given day and produces as output a swap curve that gives the (model-implied) swap rate for any maturity. The maturity is measured in years and assumed to be continuous.
+      
+      <p>The following yield curve models are included:
+      <ul>
+	<li><a href="Discrete.html">Discrete model</a></li>
+        <li><a href="Spline.html">Spline model</a></li>
+	<li><a href="Vasicek.html">Vasicek model</a></li>
+      </ul>
+      
+      <p>The following numerical methods are used:
+      <ul>
+        <li><a href="Newton.html">Newton solver</a></li>
+      </ul>
+      
       <hr>
       <footer>
         <p>&copy; 2015 - 2016 fancidev.</p>

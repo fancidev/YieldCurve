@@ -4,7 +4,8 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Newton Solver</title>
+    <link rel="icon" href="favicon.png">
+    <title>Newton Solver - Yield Curve Model</title>
     <script type="text/x-mathjax-config">
     MathJax.Hub.Config({
       tex2jax: {
@@ -130,6 +131,10 @@ $$
 This is a system of $p+n+m$ equations. Note that $\vH$ may not be invertible, so the system must be solved as a whole.
 <!-- In particular, if the model can already be fit using the market inputs and model-specific linear constraints, then simply set $\vH = \vzero$. We may simplify the problem a little by removing the equations that correspond to rows in $\vH$ where all elements are zero. This reduces the number of unknowns to solve.-->
 
+      <hr>
+      <footer>
+        <p>&copy; 2015 - 2016 fancidev.</p>
+      </footer>
     </div><!-- /.container -->
   </body>
 </html>

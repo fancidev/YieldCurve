@@ -4,7 +4,8 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Spline Model</title>
+    <link rel="icon" href="favicon.png">
+    <title>Spline Model - Yield Curve Demo</title>
     <script type="text/x-mathjax-config">
     MathJax.Hub.Config({
       //jax: ["input/TeX", "output/SVG"],
@@ -51,7 +52,7 @@ $$
 <h1>Spline Model</h1>
 <hr/>
 
-<p>With the spline method, we interpolate the input rates by a spline. Specifically, we interpolate the log-discount factor curve, $F$, where $F(t) \triangleq -\ln P(t) = \int_0^t f(s) \, \d s$ where $f(t)$ is the instantaneous forward rate. We then use a <a href="Newton.html">Newton solver</a> to fit the implied swap rates (produced by the spline) to the observed swap rates (input by the user).
+<p>The spline model interpolates the input rates by a spline. Specifically, we interpolate the log-discount factor curve, $F$, where $F(t) \triangleq -\ln P(t) = \int_0^t f(s) \, \d s$ where $f(t)$ is the instantaneous forward rate. We then use a <a href="Newton.html">Newton solver</a> to fit the implied swap rates (produced by the spline) to the observed swap rates (input by the user).
 
 <p><a href="http://quantlib.org/reference/group__interpolations.html">QuantLib</a> is a open source library for financial modelling and contains a breadth of interpolation methods, including spline methods. The spline method enforces the derivative at knot points to be continuous up to (the spline's degree minus one)'s order. QuantLib also contains other interpolation methods, such as monotonic interpolation, that do not require such a high level of smoothness.
 
@@ -97,7 +98,10 @@ Higher-order derivatives can be found recursively.
 
 <p>Experiment shows that linear interpolation and natural cubic spline (on log-discount factors) appear to be most appropriate. Linear interpolation is extremely simple, and produces an extremely simple bump response curve. (A bump response curve shows how much each maturity moves after bumping one input by one basis-point.) Natural cubic spline is known to be the smoothest interpolant when smoothness is quantified by the integral of second-order derivative. And it indeed produces a smooth instantaneous forward curve. But its bump response is too strong for maturities in the middle of two adjacent but far-apart knot points.
 
-
+      <hr>
+      <footer>
+        <p>&copy; 2015 - 2016 fancidev.</p>
+      </footer>
     </div><!-- /.container -->
   </body>
 </html>

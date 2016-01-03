@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="favicon.png">
+    <title>Vasicek Model - Yield Curve Demo</title>
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      //jax: ["input/TeX", "output/SVG"],
+      tex2jax: {
+        inlineMath: [['$','$'], ['\\(','\\)']]
+      },
+      styles: {
+        ".MathJax_Display": { 
+	  "overflow": "auto",
+	  "overflow-y": "hidden"
+	},
+      }
+    });
+    </script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"/>
+    <style>
+    .main-container {
+      color: black;
+      font-size: 16px;
+    }
+    //.overflow-container {
+    //  overflow: auto;
+    //}
+    </style>
+  </head>
+  <body>
+<div style="display: none">
+$$
+\newcommand{\d}{\mathrm{d}}
+\newcommand{\vA}{\mathbf{A}}
+\newcommand{\vH}{\mathbf{H}}
+\newcommand{\vJ}{\mathbf{J}}
+\newcommand{\vP}{\mathbf{P}}
+\newcommand{\vb}{\mathbf{b}}
+\newcommand{\vq}{\mathbf{q}}
+\newcommand{\vx}{\mathbf{x}}
+\newcommand{\vy}{\mathbf{y}}
+\newcommand{\vdelta}{\mathbf{\delta}}
+\newcommand{\vlambda}{\mathbf{\lambda}}
+\newcommand{\vzero}{\mathbf{0}}
+$$
+</div>
+    <div class="container main-container">
+
+    
+<h1>Vasicek Model</h1>
+<hr>
+
+<p>
+The <a href="https://en.wikipedia.org/wiki/Vasicek_model">Vasicek model</a> is a structural model of the short rate. We implement an $n$-factor Vasicek model. Under this model, the stochastic short-rate, $r$, is assumed to be the sum of $n$ stochastic factors $X_1, \cdots, X_n$ that mean revert to zero, plus a non-stochastic <em>long-term target</em> factor $w$; that is,
+<div>
+$$
+r = x_0 + X_1 + \cdots X_n .
+$$
+</div>
+with
+$$
+\d X_i(t) = -k_i X_i(t) \d t + \sigma_i \d W_i(t)
+$$
+and factor-factor correlation $E[X_i X_j] = \rho_{ij} \d t$.
+</p>
+
+<p>This model has the following <em>structural parameters</em>:
+<ul>
+  <li>mean reversion speed $k$ of each factor;
+  <li>volatility $\sigma$ of each factor; and
+  <li>correlation coefficient $\rho$ between each pair of factors.
+</ul>
+These structural parameters are supposed to be specified a-priori.
+</p>
+
+<p>
+The initial value of the factors are <em>state variables</em>.
+
+<p>
+The short-rate target, $w$, may be treated either as a structural parameter or as a state variable, depending on the application.
+
+<p>
+The discount factor under this model can be found to be
+$$
+P(t) = \exp \left[ A(t) - w t - \sum_{i=1}^n B(k_i,t) X_i(0) \right]
+$$
+where
+<div class="overflow-container">
+$$
+A(t) = \frac{1}{2} \sum_{i=1}^n \sum_{j=1}^n \frac{\sigma_i \sigma_j \rho_{ij}}{k_i k_j}\left[ t-B(k_i,t)-B(k_j,t)+B(k_i+k_j,t) \right],
+$$
+</div>
+and
+$$
+B(k, t) = \frac{1-e^{-kt}}{k} .
+$$
+
+<p>
+We use Newton's method to fit Vasicek model on a given day. If the w parameter is specified as a structural parameter, the number of inputs must be equal to the number of factors; if the w parameter is treated as a state variable, the number of inputs must be equal to the number of factors plus one.
+
+<p>
+To calibrate the structural parameters (i.e. the covariance between factors), we fit the model successively to 100 days of data, and compute the empirical covariance of the implied factor series. Repeat this until the covariance matrix converges (usually within 5 iterations).
+
+<p>
+The mean-reverting parameters are computed a-priori by taking the maturity of input instruments as the half-life of the factors.
+
+<p>
+There are a few problems with the multi-factor model:
+<ul>
+<li>The model cannot fit all input points with limited number of factors.
+<li>If the number of factors are increased, the fitted curve exhibits highly unstable shape.
+<li>The instantaneous forward curve tends to bend downwards at long end, due to the volatility-induced convexity inherent in the model; such shape of the forward curve may not be intuitive. (If we force all factor volatilities to zero, then the forward curve looks nicer; but then we are not really using a model.)
+<li>
+The structural parameter calibration process is not robust; it may easily converge to a bizarre structure.
+<li>
+There is no scientific way to specify the mean reversion parameters k.
+</ul>
+</p>
+
+<p>
+In conclusion, the multi-factor Vasicek model is neither flexible nor robust enough for real-world use.
+
+<hr>
+
+
+      <footer>
+        <p>&copy; 2015 - 2016 fancidev.</p>
+      </footer>
+    </div><!-- /.container -->
+  </body>
+</html>
