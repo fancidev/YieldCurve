@@ -4,10 +4,11 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="favicon.png">
     <title>Yield Curve Demo</title>
 
     <!-- Bootstrap -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
     <!--<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" />-->
     
     <!-- Styles -->
@@ -19,7 +20,7 @@
   </head>
   <body>
   
-    <nav class="navbar navbar-default navbar-static-top">
+    <nav class="navbar navbar-default navbar-static-top hidden">
       <div class="container">
         <div class="navbar-header">
           <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
@@ -53,9 +54,30 @@
 
     <div class="container">
       <div class="main-container">
-        <h1>Test project page!</h1>
-        <p class="lead">Click navigation bar.</p>
+        <h1>Yield Curve Demo</h1>
+        <p class="lead">Demonstrates methods to build a yield curve.</p>
       </div>
+      <div class="row">
+        <div class="col-md-4">
+          <h2>Demo</h2>
+          <p>This interactive demo builds the US swap rate curve using three types of models: spline, Vasicek, and discrete. The fitted swap, zero-coupon, and forward curves are shown along with their bump response profile. Over 10 years of daily historical data are available for back-testing and calibration.</p>
+          <p><a class="btn btn-default" href="Demo.html" role="button">View demo &raquo;</a></p>
+        </div>
+        <div class="col-md-4">
+          <h2>Docs</h2>
+          <p>This section contains a mathematical description of the yield curve models and numerical methods used in this demo. In addition, for each model type we provide a summary of the features of different parameterizations. Links to wikipedia pages and references to published papers are (to be) included.</p>
+          <p><a class="btn btn-default" href="Doc.html" role="button">View docs &raquo;</a></p>
+       </div>
+        <div class="col-md-4">
+          <h2>Code</h2>
+          <p>The source code of the interactive demo as well as the web content is hosted on github under the MIT license. The demo is written entirely in Javascript and runs in the browser. A collection of tools and libraries are used, including bootstrap, canvasjs, jQuery, mathjax, numericjs, and typescript.</p>
+          <p><a class="btn btn-default" href="https://github.com/fancidev/YieldCurve" role="button">View code &raquo;</a></p>
+        </div>
+      </div>
+      <hr>
+      <footer>
+        <p>&copy; 2015 - 2016 fancidev.</p>
+      </footer>
     </div><!-- /.container -->
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
